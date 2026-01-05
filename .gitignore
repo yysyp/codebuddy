@@ -1,3 +1,82 @@
+ignore
+ignores
+ignored
+ignorefile
+ignorefiles
+ignoredfile
+ignoredfiles
+git-ignored-file
+gitIgnoredFile
+upload-folder/
+ignorefolder/
+temp
+temporary
+tmp/
+out/
+log/
+mypythonvenv
+venv
+.venv
+.env
+*.private
+*.env.json
+*.tmp
+*.bak
+*.private.env.json
+application-jasypt.yml
+application-jasypt.yaml
+application-jasypt.properties
+
+### windows ###
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+### Gradle ###
+.gradle
+gradle-app.setting
+##Not to ignore gradle-wrapper.properties file
+!gradle/wrapper/gradle-wrapper.properties
+
+## !gradle-wrapper.jar
+## !gradle/wrapper/gradle-wrapper.jar
+.gradletasknamecache
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+###FrontEnd###
+node_modules/
+/src/.umi
+/src/.umi-production
+/src/.umi-test
+/.umi
+/.umi-production
+/.umi-test
+/.mfsu
+.swc
+
+### others ###
+# Word ... temporary ~$*.xls*
+~$*
+*.xlk
+
+# Visio autosave temporary files
+*.~vsd*
+
 # Compiled class file
 *.class
 
@@ -19,6 +98,20 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# virtual machine crash logs
 hs_err_pid*
 replay_pid*
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+*.output
+
+##/build/ will only igonre the build folder in root dir
+build/
+target/
+.mvn
+aspringboot-jpa-demo/src/test/resources/application-jasypt.yml
+aspringboot-jpa-demo/src/test/resources/application-jasypt.yml
