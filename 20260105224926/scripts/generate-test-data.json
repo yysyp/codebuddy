@@ -1,0 +1,61 @@
+[
+  {
+    "eventType": "NOTIFICATION",
+    "message": "New user registered: user123",
+    "data": {
+      "userId": "user123",
+      "username": "johndoe",
+      "timestamp": "2024-01-05T10:30:00"
+    }
+  },
+  {
+    "eventType": "ALERT",
+    "message": "High CPU usage detected",
+    "data": {
+      "severity": "HIGH",
+      "cpuUsage": 95,
+      "threshold": 80,
+      "timestamp": "2024-01-05T10:31:00"
+    }
+  },
+  {
+    "eventType": "METRICS",
+    "message": "System performance metrics",
+    "data": {
+      "cpuUsage": 45,
+      "memoryUsage": 62,
+      "diskUsage": 55,
+      "activeConnections": 150,
+      "networkIn": 1024,
+      "networkOut": 856
+    }
+  },
+  {
+    "eventType": "NOTIFICATION",
+    "message": "Database backup completed successfully",
+    "data": {
+      "backupSize": "2.5GB",
+      "duration": "5 minutes",
+      "timestamp": "2024-01-05T10:32:00"
+    }
+  },
+  {
+    "eventType": "ALERT",
+    "message": "API rate limit approaching",
+    "data": {
+      "severity": "MEDIUM",
+      "currentRate": 980,
+      "limit": 1000,
+      "threshold": 900
+    }
+  },
+  {
+    "eventType": "METRICS",
+    "message": "Real-time traffic metrics",
+    "data": {
+      "requestsPerSecond": 150,
+      "avgResponseTime": 45,
+      "errorRate": 0.02
+    }
+  }
+]

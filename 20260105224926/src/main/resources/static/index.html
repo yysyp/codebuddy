@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring SSE Demo - Real-Time Events</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .status-bar {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .status-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+            transition: background 0.3s;
+        }
+
+        .status-indicator.connected {
+            background: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        .status-indicator.disconnected {
+            background: #f44336;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .controls h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-connect {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-connect:hover:not(:disabled) {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-disconnect {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-disconnect:hover:not(:disabled) {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .btn-clear {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-clear:hover:not(:disabled) {
+            background: #0b7dda;
+            transform: translateY(-2px);
+        }
+
+        .events-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .events-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .events-header h2 {
+            color: #333;
+        }
+
+        .event-count {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .events-log {
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .event-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #ccc;
+            background: white;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .event-item.NOTIFICATION {
+            border-left-color: #2196F3;
+        }
+
+        .event-item.METRICS {
+            border-left-color: #4CAF50;
+        }
+
+        .event-item.TIME {
+            border-left-color: #9C27B0;
+        }
+
+        .event-item.ALERT {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+
+        .event-item.HEARTBEAT {
+            border-left-color: #FF9800;
+            background: #fff3e0;
+        }
+
+        .event-item.CONNECTION {
+            border-left-color: #00BCD4;
+            background: #e0f7fa;
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .event-type {
+            color: #667eea;
+        }
+
+        .event-time {
+            color: #999;
+            font-size: 0.85em;
+        }
+
+        .event-message {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .event-data {
+            background: #f9f9f9;
+            padding: 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            color: #666;
+            overflow-x: auto;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            .status-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Spring SSE Demo</h1>
+            <p>Real-time Server-Sent Events Dashboard</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div id="statusIndicator" class="status-indicator"></div>
+                <div>
+                    <div class="status-label">Connection Status</div>
+                    <div id="connectionStatus" class="status-value">Disconnected</div>
+                </div>
+            </div>
+            <div class="status-item">
+                <div>
+                    <div class="status-label">Client ID</div>
+                    <div id="clientId" class="status-value">-</div>
+                </div>
+            </div>
+            <div class="status-item">
+                <div>
+                    <div class="status-label">Events Received</div>
+                    <div id="eventsReceived" class="status-value">0</div>
+                </div>
+            </div>
+            <div class="status-item">
+                <div>
+                    <div class="status-label">Uptime</div>
+                    <div id="uptime" class="status-value">0s</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h2>Connection Controls</h2>
+            <div class="button-group">
+                <button id="connectBtn" class="btn-connect" onclick="connect()">Connect</button>
+                <button id="disconnectBtn" class="btn-disconnect" onclick="disconnect()" disabled>Disconnect</button>
+                <button id="clearBtn" class="btn-clear" onclick="clearEvents()">Clear Events</button>
+            </div>
+        </div>
+
+        <div class="events-container">
+            <div class="events-header">
+                <h2>📡 Live Event Stream</h2>
+                <div class="event-count" id="eventCount">0 events</div>
+            </div>
+            <div id="eventsLog" class="events-log">
+                <div class="empty-state">
+                    <p>Connect to start receiving real-time events</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+        let eventCount = 0;
+        let connectionStartTime = null;
+        let uptimeInterval = null;
+
+        const eventsLog = document.getElementById('eventsLog');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const clientIdDisplay = document.getElementById('clientId');
+        const eventsReceivedDisplay = document.getElementById('eventsReceived');
+        const eventCountDisplay = document.getElementById('eventCount');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const uptimeDisplay = document.getElementById('uptime');
+
+        function connect() {
+            if (eventSource) {
+                return;
+            }
+
+            const clientId = 'web-client-' + Date.now().toString(36);
+            const url = `/sse-demo/api/sse/subscribe?clientId=${clientId}`;
+
+            eventSource = new EventSource(url);
+
+            eventSource.onopen = function() {
+                console.log('SSE Connection opened');
+                updateConnectionStatus(true, clientId);
+                connectionStartTime = Date.now();
+                startUptimeCounter();
+            };
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const eventData = JSON.parse(event.data);
+                    addEventToLog(eventData);
+                } catch (e) {
+                    console.error('Error parsing event:', e);
+                }
+            };
+
+            eventSource.onerror = function(error) {
+                console.error('SSE Connection error:', error);
+                updateConnectionStatus(false);
+                stopUptimeCounter();
+                eventSource.close();
+                eventSource = null;
+            };
+
+            eventSource.addEventListener('CONNECTION', function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('Connection confirmed:', data);
+                } catch (e) {
+                    console.error('Error parsing connection event:', e);
+                }
+            });
+        }
+
+        function disconnect() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+                updateConnectionStatus(false);
+                stopUptimeCounter();
+            }
+        }
+
+        function updateConnectionStatus(connected, clientId = '-') {
+            connectionStatus.textContent = connected ? 'Connected' : 'Disconnected';
+            clientIdDisplay.textContent = clientId;
+            connectBtn.disabled = connected;
+            disconnectBtn.disabled = !connected;
+            
+            if (connected) {
+                statusIndicator.className = 'status-indicator connected';
+            } else {
+                statusIndicator.className = 'status-indicator disconnected';
+            }
+        }
+
+        function addEventToLog(eventData) {
+            eventCount++;
+            eventsReceivedDisplay.textContent = eventCount;
+            eventCountDisplay.textContent = eventCount + ' event' + (eventCount !== 1 ? 's' : '');
+
+            // Remove empty state if present
+            const emptyState = eventsLog.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const eventElement = document.createElement('div');
+            eventElement.className = `event-item ${eventData.eventType}`;
+
+            const time = eventData.timestamp || new Date().toISOString();
+            
+            let dataHtml = '';
+            if (eventData.data) {
+                dataHtml = `<div class="event-data">${JSON.stringify(eventData.data, null, 2)}</div>`;
+            }
+
+            eventElement.innerHTML = `
+                <div class="event-header">
+                    <span class="event-type">${eventData.eventType}</span>
+                    <span class="event-time">${time}</span>
+                </div>
+                <div class="event-message">${eventData.message}</div>
+                ${dataHtml}
+            `;
+
+            eventsLog.insertBefore(eventElement, eventsLog.firstChild);
+
+            // Keep only last 100 events
+            while (eventsLog.children.length > 100) {
+                eventsLog.removeChild(eventsLog.lastChild);
+            }
+        }
+
+        function clearEvents() {
+            eventsLog.innerHTML = '<div class="empty-state"><p>Connect to start receiving real-time events</p></div>';
+            eventCount = 0;
+            eventsReceivedDisplay.textContent = '0';
+            eventCountDisplay.textContent = '0 events';
+        }
+
+        function startUptimeCounter() {
+            uptimeInterval = setInterval(() => {
+                if (connectionStartTime) {
+                    const uptime = Math.floor((Date.now() - connectionStartTime) / 1000);
+                    uptimeDisplay.textContent = formatUptime(uptime);
+                }
+            }, 1000);
+        }
+
+        function stopUptimeCounter() {
+            if (uptimeInterval) {
+                clearInterval(uptimeInterval);
+                uptimeInterval = null;
+            }
+            uptimeDisplay.textContent = '0s';
+        }
+
+        function formatUptime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${secs}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
+        }
+    </script>
+</body>
+</html>

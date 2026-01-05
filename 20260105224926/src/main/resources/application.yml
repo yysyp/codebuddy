@@ -1,0 +1,38 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /sse-demo
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    connection-timeout: 20000ms
+    max-connections: 8192
+
+spring:
+  application:
+    name: sse-demo
+
+# SSE Configuration
+sse:
+  timeout:
+    heartbeat: 30000  # Heartbeat interval in milliseconds (30 seconds)
+  retry:
+    delay: 1000      # Retry delay in milliseconds for client reconnection
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    com.example.ssedemo: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
