@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- Apache Ignite Embedded Configuration -->
+    <bean id="ignite.cfg" class="org.apache.ignite.configuration.IgniteConfiguration">
+        <!-- Set node name -->
+        <property name="igniteInstanceName" value="IgniteSpringBootDemo"/>
+
+        <!-- Peer class loading enabled for dynamic deployment -->
+        <property name="peerClassLoadingEnabled" value="true"/>
+
+        <!-- Cache configuration for User entities -->
+        <property name="cacheConfiguration">
+            <list>
+                <!-- User Cache -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="UserCache"/>
+                    <property name="atomicityMode" value="ATOMIC"/>
+                    <property name="backups" value="1"/>
+                    <property name="indexedTypes">
+                        <list>
+                            <!-- Key type: Long -->
+                            <value>java.lang.Long</value>
+                            <!-- Value type: User class -->
+                            <value>com.demo.ignite.entity.User</value>
+                        </list>
+                    </property>
+                </bean>
+
+                <!-- Product Cache -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="ProductCache"/>
+                    <property name="atomicityMode" value="ATOMIC"/>
+                    <property name="backups" value="1"/>
+                    <property name="indexedTypes">
+                        <list>
+                            <value>java.lang.Long</value>
+                            <value>com.demo.ignite.entity.Product</value>
+                        </list>
+                    </property>
+                </bean>
+            </list>
+        </property>
+
+        <!-- Discovery SPI configuration for embedded mode (local node only) -->
+        <property name="discoverySpi">
+            <bean class="org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi">
+                <property name="localAddress" value="127.0.0.1"/>
+                <property name="localPort" value="47500"/>
+                <property name="ipFinder">
+                    <bean class="org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder">
+                        <property name="addresses">
+                            <list>
+                                <value>127.0.0.1:47500</value>
+                            </list>
+                        </property>
+                    </bean>
+                </property>
+            </bean>
+        </property>
+
+        <!-- Communication SPI configuration -->
+        <property name="communicationSpi">
+            <bean class="org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi">
+                <property name="localPort" value="47100"/>
+            </bean>
+        </property>
+    </bean>
+
+</beans>

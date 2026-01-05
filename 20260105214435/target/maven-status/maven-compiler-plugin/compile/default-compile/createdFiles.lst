@@ -1,0 +1,12 @@
+com\demo\ignite\controller\TestController.class
+com\demo\ignite\service\UserService.class
+com\demo\ignite\entity\User.class
+com\demo\ignite\repository\UserRepository.class
+com\demo\ignite\repository\ProductRepository.class
+com\demo\ignite\service\ProductService.class
+com\demo\ignite\IgniteSpringBootApplication.class
+com\demo\ignite\controller\UserController.class
+com\demo\ignite\controller\ProductController.class
+com\demo\ignite\config\IgniteConfig.class
+com\demo\ignite\DataInitializer.class
+com\demo\ignite\entity\Product.class
