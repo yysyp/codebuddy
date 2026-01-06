@@ -25,8 +25,12 @@ import java.util.concurrent.TimeUnit;
 public class SseEmitterService {
 
     private final ConcurrentHashMap<String, SseEmitter> emitters = new ConcurrentHashMap<>();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
     private final ScheduledExecutorService heartbeatExecutor = Executors.newSingleThreadScheduledExecutor();
+
+    public SseEmitterService(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @Value("${sse.timeout.heartbeat:30000}")
     private long heartbeatInterval;
@@ -34,7 +38,7 @@ public class SseEmitterService {
     /**
      * Initialize heartbeat mechanism to keep connections alive
      */
-    @javax.annotation.PostConstruct
+    @PostConstruct
     public void init() {
         // Schedule heartbeat every 30 seconds to prevent connection timeout
         heartbeatExecutor.scheduleAtFixedRate(
@@ -132,7 +136,7 @@ public class SseEmitterService {
         try {
             String eventData = objectMapper.writeValueAsString(event);
             emitter.send(SseEmitter.event()
-                .name(event.getEventType())
+                //.name(event.getEventType())
                 .id(event.getEventId())
                 .data(eventData)
                 .reconnectTime(1000));
