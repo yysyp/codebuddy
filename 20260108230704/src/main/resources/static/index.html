@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Demo Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            font-size: 1em;
+        }
+
+        .tab:hover {
+            background: #e8e8e8;
+            color: #333;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-connect {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-connect:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-disconnect {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-disconnect:hover {
+            background: #e53e3e;
+            transform: translateY(-2px);
+        }
+
+        .btn-send {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-send:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status.connected {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 2px solid #48bb78;
+        }
+
+        .status.disconnected {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 2px solid #f56565;
+        }
+
+        .status.connecting {
+            background: #feebc8;
+            color: #744210;
+            border: 2px solid #ed8936;
+        }
+
+        .messages {
+            background: #f7fafc;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            background: white;
+            border-left: 4px solid #667eea;
+        }
+
+        .message.error {
+            border-left-color: #f56565;
+            background: #fff5f5;
+        }
+
+        .message.sent {
+            border-left-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .message.received {
+            border-left-color: #667eea;
+            background: #ebf8ff;
+        }
+
+        .message .timestamp {
+            color: #718096;
+            font-size: 0.85em;
+        }
+
+        .message .content {
+            margin-top: 5px;
+            color: #2d3748;
+            word-wrap: break-word;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .info-box {
+            background: #e6fffa;
+            border: 2px solid #38b2ac;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            color: #234e52;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            color: #2c7a7b;
+            padding-left: 20px;
+        }
+
+        .info-box li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 WebSocket Demo Application</h1>
+            <p>Real-time bidirectional communication with Spring Boot WebSocket</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('echo')">Echo Demo</button>
+            <button class="tab" onclick="switchTab('chat')">Chat Room</button>
+        </div>
+
+        <div id="echo-tab" class="tab-content active">
+            <div class="info-box">
+                <h3>Echo WebSocket Demo</h3>
+                <ul>
+                    <li>Connect to: <strong>ws://localhost:8080/ws/echo</strong></li>
+                    <li>Sends back any message with a timestamp</li>
+                    <li>Perfect for testing WebSocket connectivity</li>
+                </ul>
+            </div>
+
+            <div id="echo-status" class="status disconnected">Disconnected</div>
+
+            <div class="button-group">
+                <button id="echo-connect" class="btn-connect" onclick="connectEcho()">Connect</button>
+                <button id="echo-disconnect" class="btn-disconnect" onclick="disconnectEcho()" disabled>Disconnect</button>
+            </div>
+
+            <div class="form-group">
+                <label>Message:</label>
+                <textarea id="echo-message" placeholder="Type your message here..."></textarea>
+            </div>
+
+            <button id="echo-send" class="btn-send" onclick="sendEcho()" disabled>Send Message</button>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Messages:</label>
+                <div id="echo-messages" class="messages"></div>
+            </div>
+        </div>
+
+        <div id="chat-tab" class="tab-content">
+            <div class="info-box">
+                <h3>Chat Room Demo</h3>
+                <ul>
+                    <li>Connect to: <strong>ws://localhost:8080/ws/chat</strong></li>
+                    <li>Supports multiple chat rooms</li>
+                    <li>Real-time broadcast to all users in the same room</li>
+                    <li>Supports JOIN, LEAVE, and CHAT message types</li>
+                </ul>
+            </div>
+
+            <div id="chat-status" class="status disconnected">Disconnected</div>
+
+            <div class="button-group">
+                <button id="chat-connect" class="btn-connect" onclick="connectChat()">Connect</button>
+                <button id="chat-disconnect" class="btn-disconnect" onclick="disconnectChat()" disabled>Disconnect</button>
+            </div>
+
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="chat-username" placeholder="Enter your username">
+            </div>
+
+            <div class="form-group">
+                <label>Room:</label>
+                <input type="text" id="chat-room" placeholder="Enter room name (e.g., general, random)">
+            </div>
+
+            <div class="form-group">
+                <label>Message:</label>
+                <textarea id="chat-message" placeholder="Type your message here..."></textarea>
+            </div>
+
+            <div class="button-group">
+                <button id="chat-join" class="btn-connect" onclick="joinRoom()" disabled>Join Room</button>
+                <button id="chat-leave" class="btn-disconnect" onclick="leaveRoom()" disabled>Leave Room</button>
+                <button id="chat-send" class="btn-send" onclick="sendChat()" disabled>Send Message</button>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Messages:</label>
+                <div id="chat-messages" class="messages"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let echoSocket = null;
+        let chatSocket = null;
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tab + '-tab').classList.add('active');
+        }
+
+        function addMessage(containerId, message, type = 'received') {
+            const container = document.getElementById(containerId);
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + type;
+
+            const timestamp = new Date().toLocaleTimeString();
+            messageDiv.innerHTML = `
+                <div class="timestamp">[${timestamp}]</div>
+                <div class="content">${escapeHtml(message)}</div>
+            `;
+
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Echo WebSocket functions
+        function connectEcho() {
+            try {
+                echoSocket = new WebSocket('ws://localhost:8080/ws/echo');
+
+                echoSocket.onopen = function() {
+                    document.getElementById('echo-status').className = 'status connected';
+                    document.getElementById('echo-status').textContent = 'Connected';
+                    document.getElementById('echo-connect').disabled = true;
+                    document.getElementById('echo-disconnect').disabled = false;
+                    document.getElementById('echo-send').disabled = false;
+                    addMessage('echo-messages', 'Connected to Echo WebSocket', 'received');
+                };
+
+                echoSocket.onmessage = function(event) {
+                    addMessage('echo-messages', event.data, 'received');
+                };
+
+                echoSocket.onerror = function(error) {
+                    addMessage('echo-messages', 'Error: ' + JSON.stringify(error), 'error');
+                };
+
+                echoSocket.onclose = function() {
+                    document.getElementById('echo-status').className = 'status disconnected';
+                    document.getElementById('echo-status').textContent = 'Disconnected';
+                    document.getElementById('echo-connect').disabled = false;
+                    document.getElementById('echo-disconnect').disabled = true;
+                    document.getElementById('echo-send').disabled = true;
+                    addMessage('echo-messages', 'Disconnected from Echo WebSocket', 'received');
+                };
+            } catch (error) {
+                addMessage('echo-messages', 'Connection error: ' + error.message, 'error');
+            }
+        }
+
+        function disconnectEcho() {
+            if (echoSocket) {
+                echoSocket.close();
+                echoSocket = null;
+            }
+        }
+
+        function sendEcho() {
+            const message = document.getElementById('echo-message').value;
+            if (message && echoSocket && echoSocket.readyState === WebSocket.OPEN) {
+                echoSocket.send(message);
+                addMessage('echo-messages', message, 'sent');
+                document.getElementById('echo-message').value = '';
+            }
+        }
+
+        // Chat WebSocket functions
+        function connectChat() {
+            try {
+                chatSocket = new WebSocket('ws://localhost:8080/ws/chat');
+
+                chatSocket.onopen = function() {
+                    document.getElementById('chat-status').className = 'status connected';
+                    document.getElementById('chat-status').textContent = 'Connected';
+                    document.getElementById('chat-connect').disabled = true;
+                    document.getElementById('chat-disconnect').disabled = false;
+                    document.getElementById('chat-join').disabled = false;
+                    document.getElementById('chat-leave').disabled = false;
+                    document.getElementById('chat-send').disabled = false;
+                    addMessage('chat-messages', 'Connected to Chat WebSocket', 'received');
+                };
+
+                chatSocket.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    const displayMessage = `[${data.type}] ${data.username || ''}: ${data.content}`;
+                    addMessage('chat-messages', displayMessage, 'received');
+                };
+
+                chatSocket.onerror = function(error) {
+                    addMessage('chat-messages', 'Error: ' + JSON.stringify(error), 'error');
+                };
+
+                chatSocket.onclose = function() {
+                    document.getElementById('chat-status').className = 'status disconnected';
+                    document.getElementById('chat-status').textContent = 'Disconnected';
+                    document.getElementById('chat-connect').disabled = false;
+                    document.getElementById('chat-disconnect').disabled = true;
+                    document.getElementById('chat-join').disabled = true;
+                    document.getElementById('chat-leave').disabled = true;
+                    document.getElementById('chat-send').disabled = true;
+                    addMessage('chat-messages', 'Disconnected from Chat WebSocket', 'received');
+                };
+            } catch (error) {
+                addMessage('chat-messages', 'Connection error: ' + error.message, 'error');
+            }
+        }
+
+        function disconnectChat() {
+            if (chatSocket) {
+                chatSocket.close();
+                chatSocket = null;
+            }
+        }
+
+        function joinRoom() {
+            const username = document.getElementById('chat-username').value;
+            const room = document.getElementById('chat-room').value;
+
+            if (!username || !room) {
+                alert('Please enter both username and room');
+                return;
+            }
+
+            const message = {
+                username: username,
+                room: room,
+                type: 'JOIN',
+                content: ''
+            };
+
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify(message));
+                addMessage('chat-messages', `Joined room: ${room} as ${username}`, 'sent');
+            }
+        }
+
+        function leaveRoom() {
+            const username = document.getElementById('chat-username').value;
+
+            const message = {
+                username: username,
+                room: '',
+                type: 'LEAVE',
+                content: ''
+            };
+
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify(message));
+                addMessage('chat-messages', 'Left room', 'sent');
+            }
+        }
+
+        function sendChat() {
+            const username = document.getElementById('chat-username').value;
+            const content = document.getElementById('chat-message').value;
+
+            if (!content) {
+                alert('Please enter a message');
+                return;
+            }
+
+            const message = {
+                username: username,
+                room: '',
+                type: 'CHAT',
+                content: content
+            };
+
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify(message));
+                addMessage('chat-messages', `You: ${content}`, 'sent');
+                document.getElementById('chat-message').value = '';
+            }
+        }
+
+        // Handle Enter key for sending messages
+        document.getElementById('echo-message').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendEcho();
+            }
+        });
+
+        document.getElementById('chat-message').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChat();
+            }
+        });
+    </script>
+</body>
+</html>
