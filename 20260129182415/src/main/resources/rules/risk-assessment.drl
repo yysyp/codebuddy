@@ -1,0 +1,103 @@
+package com.example.drools.rules.risk
+
+import com.example.drools.domain.fact.RiskAssessmentFact;
+
+// Rule 1: New users with high failed attempts are high risk
+rule "New User High Risk"
+    when
+        $fact : RiskAssessmentFact(failedAttempts >= 3, riskScore == 0)
+        eval($fact.isNewUser())
+    then
+        $fact.calculateRiskLevel(80);
+        $fact.flag("New user with multiple failed attempts");
+        $fact.requireVerification();
+        $fact.setRecommendedAction("BLOCK_ACCOUNT");
+        System.out.println("Flagged new user with high failed attempts");
+end
+
+// Rule 2: Users with unusual location are medium risk
+rule "Unusual Location Risk"
+    when
+        $fact : RiskAssessmentFact(riskScore < 60, riskScore == 0)
+        eval($fact.isUnusualLocation())
+    then
+        $fact.calculateRiskLevel(50);
+        $fact.requireVerification();
+        $fact.setRecommendedAction("ADDITIONAL_VERIFICATION");
+        System.out.println("Flagged unusual location access");
+end
+
+// Rule 3: Multiple failed attempts increase risk score
+rule "Failed Attempts Increase Risk"
+    when
+        $fact : RiskAssessmentFact(failedAttempts > 0, failedAttempts <= 3, riskScore == 0)
+    then
+        int score = $fact.getFailedAttempts() * 15;
+        $fact.calculateRiskLevel(score);
+        if (score > 30) {
+            $fact.requireVerification();
+        }
+        $fact.setRecommendedAction("PASSWORD_RESET");
+        System.out.println("Increased risk score due to failed attempts: " + score);
+end
+
+// Rule 4: Normal trusted users are low risk
+rule "Trusted User Low Risk"
+    when
+        $fact : RiskAssessmentFact(failedAttempts == 0, riskScore == 0)
+        eval(!$fact.isNewUser())
+        eval(!$fact.isUnusualLocation())
+    then
+        $fact.calculateRiskLevel(10);
+        $fact.setRecommendedAction("APPROVE");
+        System.out.println("Trusted user with low risk");
+end
+
+// Rule 5: Critical risk for extreme failed attempts
+rule "Critical Risk Extreme Attempts"
+    when
+        $fact : RiskAssessmentFact(failedAttempts >= 5, riskScore < 90)
+    then
+        $fact.calculateRiskLevel(95);
+        $fact.flag("Critical number of failed authentication attempts");
+        $fact.setRecommendedAction("BLOCK_AND_NOTIFY");
+        System.out.println("Critical risk detected with extreme failed attempts");
+end
+
+// Rule 6: Medium risk for moderate failed attempts on new users
+rule "New User Medium Risk"
+    when
+        $fact : RiskAssessmentFact(failedAttempts >= 1, failedAttempts <= 2, riskScore == 0)
+        eval($fact.isNewUser())
+    then
+        $fact.calculateRiskLevel(45);
+        $fact.requireVerification();
+        $fact.setRecommendedAction("EMAIL_VERIFICATION");
+        System.out.println("Medium risk for new user with some failed attempts");
+end
+
+// Rule 7: Low risk for users with single failed attempt
+rule "Single Failed Attempt Low Risk"
+    when
+        $fact : RiskAssessmentFact(failedAttempts == 1, riskScore == 0)
+        eval(!$fact.isNewUser())
+        eval(!$fact.isUnusualLocation())
+    then
+        $fact.calculateRiskLevel(25);
+        $fact.setRecommendedAction("CHALLENGE_QUESTION");
+        System.out.println("Low risk with single failed attempt");
+end
+
+// Rule 8: Flag for unusual location on new users
+rule "New User Unusual Location"
+    when
+        $fact : RiskAssessmentFact(failedAttempts == 0, riskScore == 0)
+        eval($fact.isNewUser())
+        eval($fact.isUnusualLocation())
+    then
+        $fact.calculateRiskLevel(70);
+        $fact.flag("New user from unusual location");
+        $fact.requireVerification();
+        $fact.setRecommendedAction("PHONE_VERIFICATION");
+        System.out.println("Flagged new user from unusual location");
+end

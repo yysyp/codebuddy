@@ -1,0 +1,16 @@
+{
+  "ruleName": "order-processing",
+  "factData": {
+    "orderId": "ORD-12345",
+    "customerId": "CUST-001",
+    "status": "PENDING",
+    "totalAmount": 150.50,
+    "itemCount": 5,
+    "highValue": false,
+    "suspicious": false,
+    "requiresApproval": false,
+    "approvalReason": "",
+    "expressShipping": false,
+    "warnings": []
+  }
+}

@@ -1,0 +1,80 @@
+package com.example.drools.rules.order
+
+import com.example.drools.domain.fact.OrderFact;
+import java.math.BigDecimal;
+
+// Rule 1: Auto-approve small orders under $100
+rule "Auto-approve Small Orders"
+    when
+        $order : OrderFact(status == "PENDING", totalAmount < 100)
+    then
+        $order.autoApprove();
+        System.out.println("Auto-approved small order: " + $order.getOrderId());
+end
+
+// Rule 2: Flag orders over $5000 as high value
+rule "Flag High Value Orders"
+    when
+        $order : OrderFact(status == "PENDING", totalAmount >= 5000, highValue == false)
+    then
+        $order.markAsHighValue();
+        System.out.println("Flagged as high value: " + $order.getOrderId());
+end
+
+// Rule 3: Suspicious order detection (multiple items, high value, no history)
+rule "Detect Suspicious Orders"
+    when
+        $order : OrderFact(status == "PENDING", itemCount > 20, totalAmount > 2000, suspicious == false)
+    then
+        $order.markAsSuspicious();
+        $order.addWarning("Unusual order pattern detected");
+        System.out.println("Flagged as suspicious: " + $order.getOrderId());
+end
+
+// Rule 4: Orders with express shipping and value > $1000 require review
+rule "Express Shipping High Value Review"
+    when
+        $order : OrderFact(status == "PENDING", expressShipping == true, totalAmount > 1000, requiresApproval == false)
+    then
+        $order.setRequiresApproval(true);
+        $order.setApprovalReason("Express shipping with high value requires manual review");
+        System.out.println("Requires approval for express shipping: " + $order.getOrderId());
+end
+
+// Rule 5: Approve orders between $100-$1000 for trusted customers
+rule "Approve Medium Orders"
+    when
+        $order : OrderFact(status == "PENDING", totalAmount >= 100, totalAmount < 1000, itemCount <= 10)
+    then
+        $order.autoApprove();
+        System.out.println("Auto-approved medium order: " + $order.getOrderId());
+end
+
+// Rule 6: Reject orders with zero or negative amount
+rule "Reject Invalid Amount Orders"
+    when
+        $order : OrderFact(status == "PENDING", totalAmount <= 0)
+    then
+        $order.autoReject();
+        $order.addWarning("Invalid order amount");
+        System.out.println("Rejected invalid order: " + $order.getOrderId());
+end
+
+// Rule 7: Large item count warning
+rule "Large Item Count Warning"
+    when
+        $order : OrderFact(status == "PENDING", itemCount > 50)
+    then
+        $order.addWarning("Large item count may indicate wholesale purchase");
+        System.out.println("Large item count warning: " + $order.getOrderId());
+end
+
+// Rule 8: Express shipping for orders under $50 gets rejected
+rule "Reject Express Shipping for Small Orders"
+    when
+        $order : OrderFact(status == "PENDING", expressShipping == true, totalAmount < 50)
+    then
+        $order.autoReject();
+        $order.addWarning("Express shipping not available for orders under $50");
+        System.out.println("Rejected express shipping for small order: " + $order.getOrderId());
+end

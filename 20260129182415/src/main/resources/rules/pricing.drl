@@ -1,0 +1,71 @@
+package com.example.drools.rules.pricing
+
+import com.example.drools.domain.fact.PricingFact;
+import java.math.BigDecimal;
+
+// Rule 1: VIP customers get 20% discount
+rule "VIP Customer Discount"
+    when
+        $fact : PricingFact(customerType == "VIP", originalPrice != null)
+    then
+        $fact.applyDiscount(new BigDecimal("0.20"), "VIP customer discount");
+        System.out.println("Applied 20% VIP discount");
+end
+
+// Rule 2: Premium customers get 10% discount
+rule "Premium Customer Discount"
+    when
+        $fact : PricingFact(customerType == "PREMIUM", originalPrice != null)
+    then
+        $fact.applyDiscount(new BigDecimal("0.10"), "Premium customer discount");
+        System.out.println("Applied 10% Premium discount");
+end
+
+// Rule 3: Regular customers with 10+ purchases get 5% discount
+rule "Regular Customer Volume Discount"
+    when
+        $fact : PricingFact(customerType == "REGULAR", purchaseCount >= 10, originalPrice != null)
+    then
+        $fact.applyDiscount(new BigDecimal("0.05"), "Volume discount (10+ purchases)");
+        System.out.println("Applied 5% volume discount for regular customer");
+end
+
+// Rule 4: Special promotion gives 15% extra discount
+rule "Special Promotion Discount"
+    when
+        $fact : PricingFact(specialPromotion == true, discountedPrice != null, discountedPrice > 0)
+    then
+        BigDecimal currentPrice = $fact.getDiscountedPrice();
+        BigDecimal additionalDiscount = currentPrice.multiply(new BigDecimal("0.15"));
+        BigDecimal newPrice = currentPrice.subtract(additionalDiscount);
+        $fact.setDiscountedPrice(newPrice);
+        $fact.setDiscountReason($fact.getDiscountReason() + " + Special promotion (extra 15%)");
+        System.out.println("Applied additional 15% special promotion discount");
+end
+
+// Rule 5: Minimum price protection (never below 10% of original)
+rule "Minimum Price Protection"
+    when
+        $fact : PricingFact(originalPrice != null, discountedPrice != null)
+    then
+        double minValue = Math.max($fact.getOriginalPrice().doubleValue() * 0.10, 1.0);
+        if ($fact.getDiscountedPrice().doubleValue() < minValue) {
+            $fact.setDiscountedPrice(new BigDecimal(String.valueOf(minValue)));
+            $fact.setDiscountReason("Minimum price protection applied");
+            System.out.println("Applied minimum price protection");
+        }
+end
+
+// Rule 6: Large order bonus (orders over $1000 get additional 5% off)
+rule "Large Order Bonus"
+    when
+        $fact : PricingFact(originalPrice != null, discountedPrice != null, originalPrice >= 1000)
+    then
+        BigDecimal currentPrice = $fact.getDiscountedPrice();
+        BigDecimal bonusDiscount = currentPrice.multiply(new BigDecimal("0.05"));
+        BigDecimal newPrice = currentPrice.subtract(bonusDiscount);
+        $fact.setDiscountedPrice(newPrice);
+        String existingReason = $fact.getDiscountReason() != null ? $fact.getDiscountReason() : "Standard pricing";
+        $fact.setDiscountReason(existingReason + " + Large order bonus (additional 5%)");
+        System.out.println("Applied 5% large order bonus");
+end

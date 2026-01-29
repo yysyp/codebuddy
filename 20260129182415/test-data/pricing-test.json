@@ -1,0 +1,13 @@
+{
+  "ruleName": "pricing",
+  "factData": {
+    "customerId": "CUST-001",
+    "customerType": "VIP",
+    "originalPrice": 1000.00,
+    "discountedPrice": 0.00,
+    "discountRate": 0.00,
+    "discountReason": "",
+    "purchaseCount": 25,
+    "specialPromotion": true
+  }
+}

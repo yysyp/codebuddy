@@ -1,0 +1,16 @@
+{
+  "ruleName": "risk-assessment",
+  "factData": {
+    "requestId": "REQ-001",
+    "userId": "USER-001",
+    "riskLevel": "LOW",
+    "riskScore": 0,
+    "requiresVerification": false,
+    "flagged": false,
+    "flagReason": "",
+    "failedAttempts": 0,
+    "isNewUser": false,
+    "unusualLocation": false,
+    "recommendedAction": ""
+  }
+}
