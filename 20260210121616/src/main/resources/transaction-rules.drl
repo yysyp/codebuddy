@@ -1,0 +1,27 @@
+package com.example.transaction.rules
+
+import com.example.transaction.model.Transaction;
+
+// Rule 1: High Value Transaction
+rule "High Value Transaction"
+when
+    Transaction(amount >= 10000)
+then
+    System.out.println("Processing high value transaction");
+end
+
+// Rule 2: Medium Value Transaction
+rule "Medium Value Transaction"
+when
+    Transaction(amount >= 1000, amount < 10000)
+then
+    System.out.println("Processing medium value transaction");
+end
+
+// Rule 3: Low Value Transaction
+rule "Low Value Transaction"
+when
+    Transaction(amount < 1000)
+then
+    System.out.println("Processing low value transaction");
+end
