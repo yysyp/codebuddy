@@ -1,0 +1,166 @@
+package com.example.flink.transaction.rules
+
+import com.example.flink.transaction.model.Transaction
+import java.math.BigDecimal
+
+// Rule: High Value Transaction
+// Tag transactions with amount greater than $10,000
+rule "High Value Transaction"
+    when
+        $t : Transaction(amount > 10000)
+    then
+        $t.addTag("HIGH_VALUE");
+        System.out.println("Rule Applied: High Value Transaction - " + $t.getTransactionId());
+end
+
+// Rule: Very High Value Transaction
+// Tag transactions with amount greater than $50,000
+rule "Very High Value Transaction"
+    when
+        $t : Transaction(amount > 50000)
+    then
+        $t.addTag("VERY_HIGH_VALUE");
+        System.out.println("Rule Applied: Very High Value Transaction - " + $t.getTransactionId());
+end
+
+// Rule: International Transaction
+// Tag transactions to/from non-US countries
+rule "International Transaction"
+    when
+        $t : Transaction(locationCountry != null && locationCountry != "US")
+    then
+        $t.addTag("INTERNATIONAL");
+        System.out.println("Rule Applied: International Transaction - " + $t.getTransactionId());
+end
+
+// Rule: High Risk Country
+// Tag transactions from certain high-risk countries
+rule "High Risk Country"
+    when
+        $t : Transaction(locationCountry != null && (locationCountry == "BR" || locationCountry == "IN"))
+    then
+        $t.addTag("HIGH_RISK_COUNTRY");
+        $t.setRiskScore(Math.min($t.getRiskScore() + 30, 100));
+        System.out.println("Rule Applied: High Risk Country - " + $t.getTransactionId());
+end
+
+// Rule: Large Transfer
+// Tag large transfer transactions
+rule "Large Transfer"
+    when
+        $t : Transaction(transactionType == "TRANSFER" && amount > 5000)
+    then
+        $t.addTag("LARGE_TRANSFER");
+        System.out.println("Rule Applied: Large Transfer - " + $t.getTransactionId());
+end
+
+// Rule: Frequent Transaction Type
+// Tag payments and withdrawals as potentially frequent operations
+rule "Frequent Transaction Type"
+    when
+        $t : Transaction(transactionType == "PAYMENT" || transactionType == "WITHDRAWAL")
+    then
+        $t.addTag("FREQUENT_TYPE");
+        System.out.println("Rule Applied: Frequent Transaction Type - " + $t.getTransactionId());
+end
+
+// Rule: Retail Category
+// Tag retail transactions
+rule "Retail Category"
+    when
+        $t : Transaction(merchantCategory == "RETAIL")
+    then
+        $t.addTag("RETAIL");
+        System.out.println("Rule Applied: Retail Category - " + $t.getTransactionId());
+end
+
+// Rule: Travel Category
+// Tag travel transactions (often international)
+rule "Travel Category"
+    when
+        $t : Transaction(merchantCategory == "TRAVEL")
+    then
+        $t.addTag("TRAVEL");
+        System.out.println("Rule Applied: Travel Category - " + $t.getTransactionId());
+end
+
+// Rule: High Risk Score
+// Tag transactions with high risk score (>= 70)
+rule "High Risk Score"
+    when
+        $t : Transaction(riskScore >= 70)
+    then
+        $t.addTag("HIGH_RISK");
+        System.out.println("Rule Applied: High Risk Score - " + $t.getTransactionId());
+end
+
+// Rule: Medium Risk Score
+// Tag transactions with medium risk score (>= 40 and < 70)
+rule "Medium Risk Score"
+    when
+        $t : Transaction(riskScore >= 40 && riskScore < 70)
+    then
+        $t.addTag("MEDIUM_RISK");
+        System.out.println("Rule Applied: Medium Risk Score - " + $t.getTransactionId());
+end
+
+// Rule: Low Risk Score
+// Tag transactions with low risk score (< 40)
+rule "Low Risk Score"
+    when
+        $t : Transaction(riskScore < 40)
+    then
+        $t.addTag("LOW_RISK");
+        System.out.println("Rule Applied: Low Risk Score - " + $t.getTransactionId());
+end
+
+// Rule: Same Account Transfer
+// Tag transfers between same account (potential error)
+rule "Same Account Transfer"
+    when
+        $t : Transaction(sourceAccount != null && destinationAccount != null && sourceAccount == destinationAccount)
+    then
+        $t.addTag("SUSPICIOUS_SAME_ACCOUNT");
+        $t.setRiskScore(Math.min($t.getRiskScore() + 50, 100));
+        System.out.println("Rule Applied: Same Account Transfer - " + $t.getTransactionId());
+end
+
+// Rule: Round Amount
+// Tag transactions with round amounts (e.g., $100, $1000)
+rule "Round Amount"
+    when
+        $t : Transaction(amount != null && amount.remainder(BigDecimal.valueOf(100)) == 0 && amount > 0)
+    then
+        $t.addTag("ROUND_AMOUNT");
+        System.out.println("Rule Applied: Round Amount - " + $t.getTransactionId());
+end
+
+// Rule: Small Transaction
+// Tag small transactions (< $100)
+rule "Small Transaction"
+    when
+        $t : Transaction(amount != null && amount < 100)
+    then
+        $t.addTag("SMALL_AMOUNT");
+        System.out.println("Rule Applied: Small Transaction - " + $t.getTransactionId());
+end
+
+// Rule: Asia Pacific Transaction
+// Tag transactions from APAC countries
+rule "Asia Pacific Transaction"
+    when
+        $t : Transaction(locationCountry != null && (locationCountry == "JP" || locationCountry == "CN" || locationCountry == "AU"))
+    then
+        $t.addTag("APAC");
+        System.out.println("Rule Applied: Asia Pacific Transaction - " + $t.getTransactionId());
+end
+
+// Rule: European Transaction
+// Tag transactions from European countries
+rule "European Transaction"
+    when
+        $t : Transaction(locationCountry != null && (locationCountry == "UK" || locationCountry == "DE" || locationCountry == "FR"))
+    then
+        $t.addTag("EUROPE");
+        System.out.println("Rule Applied: European Transaction - " + $t.getTransactionId());
+end

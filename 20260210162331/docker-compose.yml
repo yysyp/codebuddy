@@ -1,0 +1,32 @@
+# Docker Compose for H2 Database (Optional)
+# This configuration sets up H2 database in server mode
+# Note: This is optional as the application uses embedded H2 by default
+
+version: '3.8'
+
+services:
+  h2-database:
+    image: oscarfonts/h2:latest
+    container_name: h2-transaction-db
+    ports:
+      - "1521:1521"
+      - "81:81"
+    environment:
+      - H2_OPTIONS=-ifNotExists
+    volumes:
+      - h2-data:/opt/h2-data
+    networks:
+      - transaction-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "1521"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  transaction-network:
+    driver: bridge
+
+volumes:
+  h2-data:
+    driver: local

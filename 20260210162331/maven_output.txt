@@ -1,0 +1,23 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------< com.example.flink:transaction-tagging-flink >-------------
+[INFO] Building Transaction Tagging Flink Application 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] The POM for org.apache.flink:flink-streaming-java_2.12:jar:1.16.3 is missing, no dependency information available
+[WARNING] The POM for org.apache.flink:flink-clients_2.12:jar:1.16.3 is missing, no dependency information available
+[WARNING] The POM for org.apache.flink:flink-connector-jdbc_2.12:jar:1.16.3 is missing, no dependency information available
+[WARNING] The POM for org.apache.flink:flink-parquet_2.12:jar:1.16.3 is missing, no dependency information available
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.082 s
+[INFO] Finished at: 2026-02-10T16:47:22+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal on project transaction-tagging-flink: Could not resolve dependencies for project com.example.flink:transaction-tagging-flink:jar:1.0.0: The following artifacts could not be resolved: org.apache.flink:flink-streaming-java_2.12:jar:1.16.3 (absent), org.apache.flink:flink-clients_2.12:jar:1.16.3 (absent), org.apache.flink:flink-connector-jdbc_2.12:jar:1.16.3 (absent), org.apache.flink:flink-parquet_2.12:jar:1.16.3 (absent): org.apache.flink:flink-streaming-java_2.12:jar:1.16.3 was not found in http://maven.aliyun.com/nexus/content/groups/public/ during a previous attempt. This failure was cached in the local repository and resolution is not reattempted until the update interval of nexus-aliyun has elapsed or updates are forced -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/DependencyResolutionException
