@@ -1,0 +1,194 @@
+package com.transaction.rules
+
+import com.transaction.domain.entity.Transaction
+import java.math.BigDecimal
+
+dialect "mvel"
+
+/**
+ * High value transaction rule
+ * Tag transactions with amount greater than $10,000 as HIGH_VALUE
+ */
+rule "High Value Transaction"
+    when
+        $transaction: Transaction(amount > 10000)
+    then
+        $transaction.addTag("HIGH_VALUE");
+        $transaction.setRiskScore($transaction.getRiskScore().add(new BigDecimal("10")));
+        System.out.println("HIGH_VALUE tag applied to transaction: " + $transaction.getId());
+end
+
+/**
+ * Large credit transaction rule
+ * Tag credit transactions greater than $50,000 as LARGE_CREDIT
+ */
+rule "Large Credit Transaction"
+    when
+        $transaction: Transaction(
+            transactionType == "CREDIT",
+            amount > 50000
+        )
+    then
+        $transaction.addTag("LARGE_CREDIT");
+        $transaction.setRiskScore($transaction.getRiskScore().add(new BigDecimal("15")));
+        System.out.println("LARGE_CREDIT tag applied to transaction: " + $transaction.getId());
+end
+
+/**
+ * Foreign transaction rule
+ * Tag transactions from specific locations as FOREIGN
+ */
+rule "Foreign Transaction"
+    when
+        $transaction: Transaction(
+            location != null,
+            location matches ".*(?i)(china|japan|india|brazil|russia).*"
+        )
+    then
+        $transaction.addTag("FOREIGN");
+        $transaction.setRiskScore($transaction.getRiskScore().add(new BigDecimal("20")));
+        System.out.println("FOREIGN tag applied to transaction: " + $transaction.getId());
+end
+
+/**
+ * High risk merchant category rule
+ * Tag transactions from high-risk merchant categories
+ */
+rule "High Risk Merchant Category"
+    when
+        $transaction: Transaction(
+            merchantCategory in ("5994", "7995", "7996", "7997", "7998", "7999")
+        )
+    then
+        $transaction.addTag("HIGH_RISK_MERCHANT");
+        $transaction.setRiskScore($transaction.getRiskScore().add(new BigDecimal("30")));
+        System.out.println("HIGH_RISK_MERCHANT tag applied to transaction: " + $transaction.getId());
+end
+
+/**
+ * Suspicious IP pattern rule
+ * Tag transactions from suspicious IP patterns
+ */
+rule "Suspicious IP Pattern"
+    when
+        $transaction: Transaction(
+            ipAddress != null,
+            (ipAddress matches ".*192\\.168\\..*" || ipAddress matches ".*10\\..*" || ipAddress matches ".*172\\.(16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31)\\..*")
+        )
+    then
+        $transaction.addTag("SUSPICIOUS_IP");
+        $transaction.setRiskScore($transaction.getRiskScore().add(new BigDecimal("25")));
+        System.out.println("SUSPICIOUS_IP tag applied to transaction: " + $transaction.getId());
+end
+
+/**
+ * Debit transaction rule
+ * Tag debit transactions with appropriate risk
+ */
+rule "Debit Transaction Rule"
+    when
+        $transaction: Transaction(transactionType == "DEBIT")
+    then
+        $transaction.addTag("DEBIT");
+        System.out.println("DEBIT tag applied to transaction: " + $transaction.getId());
+end
+
+/**
+ * Credit transaction rule
+ * Tag credit transactions
+ */
+rule "Credit Transaction Rule"
+    when
+        $transaction: Transaction(transactionType == "CREDIT")
+    then
+        $transaction.addTag("CREDIT");
+        System.out.println("CREDIT tag applied to transaction: " + $transaction.getId());
+end
+
+/**
+ * Transfer transaction rule
+ * Tag transfer transactions with higher risk
+ */
+rule "Transfer Transaction Rule"
+    when
+        $transaction: Transaction(transactionType == "TRANSFER")
+    then
+        $transaction.addTag("TRANSFER");
+        $transaction.setRiskScore($transaction.getRiskScore().add(new BigDecimal("10")));
+        System.out.println("TRANSFER tag applied to transaction: " + $transaction.getId());
+end
+
+/**
+ * Night time transaction rule
+ * Tag transactions made during night hours (22:00-06:00 UTC)
+ */
+rule "Night Time Transaction"
+    when
+        $transaction: Transaction(
+            transactionTime != null,
+            (
+                $transaction.getTransactionTime().getHour() >= 22 ||
+                $transaction.getTransactionTime().getHour() < 6
+            )
+        )
+    then
+        $transaction.addTag("NIGHT_TRANSACTION");
+        $transaction.setRiskScore($transaction.getRiskScore().add(new BigDecimal("15")));
+        System.out.println("NIGHT_TRANSACTION tag applied to transaction: " + $transaction.getId());
+end
+
+/**
+ * Weekend transaction rule
+ * Tag transactions made on weekends (Saturday, Sunday)
+ */
+rule "Weekend Transaction"
+    when
+        $transaction: Transaction(
+            transactionTime != null,
+            (
+                $transaction.getTransactionTime().getDayOfWeek().getValue() == 6 ||
+                $transaction.getTransactionTime().getDayOfWeek().getValue() == 7
+            )
+        )
+    then
+        $transaction.addTag("WEEKEND_TRANSACTION");
+        $transaction.setRiskScore($transaction.getRiskScore().add(new BigDecimal("10")));
+        System.out.println("WEEKEND_TRANSACTION tag applied to transaction: " + $transaction.getId());
+end
+
+/**
+ * Very high risk score rule
+ * Flag transactions with risk score >= 70 as VERY_HIGH_RISK
+ */
+rule "Very High Risk Score"
+    when
+        $transaction: Transaction(riskScore >= 70)
+    then
+        $transaction.addTag("VERY_HIGH_RISK");
+        $transaction.setStatus("REVIEW_REQUIRED");
+        System.out.println("VERY_HIGH_RISK tag applied to transaction: " + $transaction.getId());
+end
+
+/**
+ * Medium risk score rule
+ * Flag transactions with risk score >= 50 and < 70 as MEDIUM_RISK
+ */
+rule "Medium Risk Score"
+    when
+        $transaction: Transaction(riskScore >= 50 && riskScore < 70)
+    then
+        $transaction.addTag("MEDIUM_RISK");
+        System.out.println("MEDIUM_RISK tag applied to transaction: " + $transaction.getId());
+end
+
+/**
+ * Low risk score rule
+ * Flag transactions with risk score < 50 as LOW_RISK
+ */
+rule "Low Risk Score"
+    when
+        $transaction: Transaction(riskScore < 50)
+    then
+        $transaction.addTag("LOW_RISK");
+        System.out.println("LOW_RISK tag applied to transaction: " + $transaction.getId());
+end
