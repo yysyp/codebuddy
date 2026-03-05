@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kmodule xmlns="http://www.drools.org/xsd/kmodule">
+    
+    <!-- 
+        KieBase configuration for transaction rules.
+        Defines a knowledge base that includes all rules from the rules package.
+    -->
+    <kbase name="transactionKbase" packages="com.example.flink.rules">
+        <ksession name="transactionKsession" 
+                  type="stateless"
+                  default="true"/>
+    </kbase>
+    
+</kmodule>

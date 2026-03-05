@@ -1,0 +1,181 @@
+package com.example.flink.rules
+
+import com.example.flink.model.Transaction;
+import java.math.BigDecimal;
+
+/**
+ * Transaction Tagging Rules
+ * 
+ * These rules analyze transactions and assign tags based on various criteria:
+ * - Amount thresholds
+ * - Risk indicators
+ * - Time-based patterns
+ * - Geographic risks
+ * - Transaction types
+ */
+
+// Rule: Flag high-value transactions
+global org.slf4j.Logger logger;
+
+rule "High Value Transaction"
+    salience 100
+    when
+        $t : Transaction(amount > 50000)
+    then
+        $t.addTag("HIGH_VALUE");
+        $t.increaseRiskScore(20);
+        if (logger != null) {
+            logger.debug("Rule fired: High Value Transaction for transactionId={}", $t.getTransactionId());
+        }
+end
+
+rule "Very High Value Transaction"
+    salience 110
+    when
+        $t : Transaction(amount > 100000)
+    then
+        $t.addTag("VERY_HIGH_VALUE");
+        $t.increaseRiskScore(30);
+        if (logger != null) {
+            logger.debug("Rule fired: Very High Value Transaction for transactionId={}", $t.getTransactionId());
+        }
+end
+
+// Rule: Flag transactions outside business hours
+rule "Off Hours Transaction"
+    salience 90
+    when
+        $t : Transaction(outsideBusinessHours == true)
+    then
+        $t.addTag("OFF_HOURS");
+        $t.increaseRiskScore(15);
+        if (logger != null) {
+            logger.debug("Rule fired: Off Hours Transaction for transactionId={}", $t.getTransactionId());
+        }
+end
+
+// Rule: Flag transactions from high-risk locations
+rule "High Risk Location"
+    salience 95
+    when
+        $t : Transaction(location != null, location matches ".*(XX|YY|ZZ).*")
+    then
+        $t.addTag("HIGH_RISK_LOCATION");
+        $t.increaseRiskScore(40);
+        if (logger != null) {
+            logger.debug("Rule fired: High Risk Location for transactionId={}", $t.getTransactionId());
+        }
+end
+
+// Rule: Flag international transactions
+rule "International Transaction"
+    salience 80
+    when
+        $t : Transaction(location != null, location not in ("US", "CN"))
+    then
+        $t.addTag("INTERNATIONAL");
+        $t.increaseRiskScore(10);
+        if (logger != null) {
+            logger.debug("Rule fired: International Transaction for transactionId={}", $t.getTransactionId());
+        }
+end
+
+// Rule: Flag suspicious counterparties
+rule "Unknown Counterparty"
+    salience 85
+    when
+        $t : Transaction(counterparty != null, counterparty matches ".*Unknown.*")
+    then
+        $t.addTag("UNKNOWN_COUNTERPARTY");
+        $t.increaseRiskScore(25);
+        if (logger != null) {
+            logger.debug("Rule fired: Unknown Counterparty for transactionId={}", $t.getTransactionId());
+        }
+end
+
+// Rule: Flag cash-related transactions
+rule "Cash Transaction"
+    salience 70
+    when
+        $t : Transaction(transactionType in ("WITHDRAWAL", "DEPOSIT"))
+    then
+        $t.addTag("CASH_RELATED");
+        $t.increaseRiskScore(5);
+        if (logger != null) {
+            logger.debug("Rule fired: Cash Transaction for transactionId={}", $t.getTransactionId());
+        }
+end
+
+// Rule: Flag API/Automated transactions
+rule "Automated Transaction"
+    salience 60
+    when
+        $t : Transaction(channel == "API")
+    then
+        $t.addTag("AUTOMATED");
+        if (logger != null) {
+            logger.debug("Rule fired: Automated Transaction for transactionId={}", $t.getTransactionId());
+        }
+end
+
+// Rule: Flag high-risk combination - High value + Off hours
+rule "High Risk Combination"
+    salience 120
+    when
+        $t : Transaction(amount > 25000, outsideBusinessHours == true)
+    then
+        $t.addTag("SUSPICIOUS_PATTERN");
+        $t.increaseRiskScore(35);
+        if (logger != null) {
+            logger.warn("Rule fired: High Risk Combination for transactionId={}", $t.getTransactionId());
+        }
+end
+
+// Rule: Flag cryptocurrency-related
+rule "Crypto Related"
+    salience 75
+    when
+        $t : Transaction(description != null, description matches ".*(?i)(crypto|bitcoin|blockchain).*")
+    then
+        $t.addTag("CRYPTO_RELATED");
+        $t.increaseRiskScore(20);
+        if (logger != null) {
+            logger.debug("Rule fired: Crypto Related for transactionId={}", $t.getTransactionId());
+        }
+end
+
+// Rule: Assign risk level based on score
+rule "High Risk Transaction"
+    salience 50
+    when
+        $t : Transaction(riskScore >= 50)
+    then
+        $t.addTag("HIGH_RISK");
+        if (logger != null) {
+            logger.warn("Rule fired: High Risk Transaction for transactionId={}, riskScore={}", 
+                       $t.getTransactionId(), $t.getRiskScore());
+        }
+end
+
+rule "Medium Risk Transaction"
+    salience 40
+    when
+        $t : Transaction(riskScore >= 20, riskScore < 50)
+    then
+        $t.addTag("MEDIUM_RISK");
+        if (logger != null) {
+            logger.debug("Rule fired: Medium Risk Transaction for transactionId={}, riskScore={}", 
+                        $t.getTransactionId(), $t.getRiskScore());
+        }
+end
+
+rule "Low Risk Transaction"
+    salience 30
+    when
+        $t : Transaction(riskScore < 20)
+    then
+        $t.addTag("LOW_RISK");
+        if (logger != null) {
+            logger.debug("Rule fired: Low Risk Transaction for transactionId={}", $t.getTransactionId());
+        }
+end
