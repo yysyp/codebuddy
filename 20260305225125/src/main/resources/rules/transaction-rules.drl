@@ -1,0 +1,301 @@
+package com.example.flink.rules
+
+import com.example.flink.model.Transaction;
+import com.example.flink.rules.TaggingResult;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
+global org.slf4j.Logger logger;
+
+// ============================================================================
+// HIGH-VALUE TRANSACTION RULES
+// ============================================================================
+
+rule "HIGH_VALUE_TRANSACTION"
+    salience 100
+    when
+        $t : Transaction(amount >= 100000)
+        $r : TaggingResult()
+    then
+        $r.addTag("HIGH_VALUE");
+        $r.updateRiskLevel("HIGH");
+        $r.recordAppliedRule("HIGH_VALUE_TRANSACTION");
+        if (logger != null) logger.debug("Rule fired: HIGH_VALUE_TRANSACTION for {}", $t.getTransactionId());
+end
+
+rule "VERY_HIGH_VALUE_TRANSACTION"
+    salience 110
+    when
+        $t : Transaction(amount >= 1000000)
+        $r : TaggingResult()
+    then
+        $r.addTag("VERY_HIGH_VALUE");
+        $r.addTag("REQUIRES_APPROVAL");
+        $r.updateRiskLevel("CRITICAL");
+        $r.flagForReview("Transaction amount exceeds 1M");
+        $r.recordAppliedRule("VERY_HIGH_VALUE_TRANSACTION");
+end
+
+// ============================================================================
+// TRANSACTION TYPE RULES
+// ============================================================================
+
+rule "WIRE_TRANSFER_TAG"
+    salience 50
+    when
+        $t : Transaction(transactionType.equalsIgnoreCase("WIRE_TRANSFER"))
+        $r : TaggingResult()
+    then
+        $r.addTag("WIRE_TRANSFER");
+        $r.recordAppliedRule("WIRE_TRANSFER_TAG");
+end
+
+rule "CASH_TRANSACTION_TAG"
+    salience 50
+    when
+        $t : Transaction(transactionType.equalsIgnoreCase("CASH"))
+        $r : TaggingResult()
+    then
+        $r.addTag("CASH");
+        $r.updateRiskLevel("MEDIUM");
+        $r.recordAppliedRule("CASH_TRANSACTION_TAG");
+end
+
+rule "CRYPTO_TRANSACTION_TAG"
+    salience 60
+    when
+        $t : Transaction(transactionType.equalsIgnoreCase("CRYPTO"))
+        $r : TaggingResult()
+    then
+        $r.addTag("CRYPTO");
+        $r.addTag("BLOCKCHAIN");
+        $r.updateRiskLevel("HIGH");
+        $r.recordAppliedRule("CRYPTO_TRANSACTION_TAG");
+end
+
+rule "INTERNATIONAL_TRANSFER_TAG"
+    salience 55
+    when
+        $t : Transaction(transactionType.equalsIgnoreCase("INTERNATIONAL_TRANSFER"))
+        $r : TaggingResult()
+    then
+        $r.addTag("INTERNATIONAL");
+        $r.updateRiskLevel("MEDIUM");
+        $r.recordAppliedRule("INTERNATIONAL_TRANSFER_TAG");
+end
+
+// ============================================================================
+// CHANNEL-BASED RULES
+// ============================================================================
+
+rule "ONLINE_CHANNEL_TAG"
+    salience 40
+    when
+        $t : Transaction(channel != null, channel.equalsIgnoreCase("ONLINE"))
+        $r : TaggingResult()
+    then
+        $r.addTag("ONLINE");
+        $r.addTag("DIGITAL");
+        $r.recordAppliedRule("ONLINE_CHANNEL_TAG");
+end
+
+rule "MOBILE_CHANNEL_TAG"
+    salience 40
+    when
+        $t : Transaction(channel != null, channel.equalsIgnoreCase("MOBILE"))
+        $r : TaggingResult()
+    then
+        $r.addTag("MOBILE");
+        $r.addTag("DIGITAL");
+        $r.recordAppliedRule("MOBILE_CHANNEL_TAG");
+end
+
+rule "ATM_CHANNEL_TAG"
+    salience 40
+    when
+        $t : Transaction(channel != null, channel.equalsIgnoreCase("ATM"))
+        $r : TaggingResult()
+    then
+        $r.addTag("ATM");
+        $r.recordAppliedRule("ATM_CHANNEL_TAG");
+end
+
+rule "BRANCH_CHANNEL_TAG"
+    salience 40
+    when
+        $t : Transaction(channel != null, channel.equalsIgnoreCase("BRANCH"))
+        $r : TaggingResult()
+    then
+        $r.addTag("BRANCH");
+        $r.addTag("IN_PERSON");
+        $r.recordAppliedRule("BRANCH_CHANNEL_TAG");
+end
+
+// ============================================================================
+// GEOGRAPHIC RISK RULES
+// ============================================================================
+
+rule "HIGH_RISK_COUNTRY"
+    salience 80
+    when
+        $t : Transaction(countryCode != null, 
+                        (countryCode.equalsIgnoreCase("XX") || 
+                         countryCode.equalsIgnoreCase("YY") ||
+                         countryCode.equalsIgnoreCase("IR") ||
+                         countryCode.equalsIgnoreCase("KP") ||
+                         countryCode.equalsIgnoreCase("SY")))
+        $r : TaggingResult()
+    then
+        $r.addTag("HIGH_RISK_COUNTRY");
+        $r.addTag("SANCTIONS_CHECK");
+        $r.updateRiskLevel("HIGH");
+        $r.flagForReview("High-risk country: " + $t.getCountryCode());
+        $r.recordAppliedRule("HIGH_RISK_COUNTRY");
+end
+
+rule "OFFSHORE_TRANSACTION"
+    salience 45
+    when
+        $t : Transaction(countryCode != null, 
+                        (countryCode.equalsIgnoreCase("KY") || 
+                         countryCode.equalsIgnoreCase("BS") ||
+                         countryCode.equalsIgnoreCase("PA") ||
+                         countryCode.equalsIgnoreCase("CH")))
+        $r : TaggingResult()
+    then
+        $r.addTag("OFFSHORE");
+        $r.updateRiskLevel("MEDIUM");
+        $r.recordAppliedRule("OFFSHORE_TRANSACTION");
+end
+
+// ============================================================================
+// SUSPICIOUS PATTERN RULES
+// ============================================================================
+
+rule "ROUND_AMOUNT_TAG"
+    salience 30
+    when
+        $t : Transaction(amount != null, 
+                        amount.remainder(new BigDecimal("1000")).compareTo(BigDecimal.ZERO) == 0,
+                        amount.compareTo(new BigDecimal("5000")) >= 0)
+        $r : TaggingResult()
+    then
+        $r.addTag("ROUND_AMOUNT");
+        $r.recordAppliedRule("ROUND_AMOUNT_TAG");
+end
+
+rule "SUSPICIOUS_DESCRIPTION_KEYWORDS"
+    salience 70
+    when
+        $t : Transaction(description != null,
+                        (description.toLowerCase().contains("gambling") ||
+                         description.toLowerCase().contains("casino") ||
+                         description.toLowerCase().contains("betting") ||
+                         description.toLowerCase().contains("forex") ||
+                         description.toLowerCase().contains("binary options")))
+        $r : TaggingResult()
+    then
+        $r.addTag("SUSPICIOUS_DESCRIPTION");
+        $r.addTag("GAMBLING");
+        $r.updateRiskLevel("MEDIUM");
+        $r.recordAppliedRule("SUSPICIOUS_DESCRIPTION_KEYWORDS");
+end
+
+rule "PEP_KEYWORDS_IN_DESCRIPTION"
+    salience 75
+    when
+        $t : Transaction(description != null,
+                        (description.toLowerCase().contains("government") ||
+                         description.toLowerCase().contains("minister") ||
+                         description.toLowerCase().contains("embassy") ||
+                         description.toLowerCase().contains("consulate")))
+        $r : TaggingResult()
+    then
+        $r.addTag("PEP_RELATED");
+        $r.addTag("ENHANCED_DUE_DILIGENCE");
+        $r.updateRiskLevel("HIGH");
+        $r.recordAppliedRule("PEP_KEYWORDS_IN_DESCRIPTION");
+end
+
+// ============================================================================
+// CURRENCY-SPECIFIC RULES
+// ============================================================================
+
+rule "CRYPTO_CURRENCY_TAG"
+    salience 65
+    when
+        $t : Transaction(currency != null, 
+                        (currency.equalsIgnoreCase("BTC") || 
+                         currency.equalsIgnoreCase("ETH") ||
+                         currency.equalsIgnoreCase("USDT") ||
+                         currency.equalsIgnoreCase("XRP")))
+        $r : TaggingResult()
+    then
+        $r.addTag("CRYPTO_CURRENCY");
+        $r.addTag("VIRTUAL_ASSET");
+        $r.updateRiskLevel("HIGH");
+        $r.recordAppliedRule("CRYPTO_CURRENCY_TAG");
+end
+
+// ============================================================================
+// COMPOUND RISK RULES
+// ============================================================================
+
+rule "HIGH_RISK_COMBINATION_CASH_LARGE"
+    salience 120
+    when
+        $t : Transaction(transactionType.equalsIgnoreCase("CASH"),
+                        amount >= 50000)
+        $r : TaggingResult()
+    then
+        $r.addTag("LARGE_CASH");
+        $r.addTag("AML_CHECK");
+        $r.updateRiskLevel("CRITICAL");
+        $r.flagForReview("Large cash transaction requires AML review");
+        $r.recordAppliedRule("HIGH_RISK_COMBINATION_CASH_LARGE");
+end
+
+rule "HIGH_RISK_COMBINATION_CRYPTO_WIRE"
+    salience 120
+    when
+        $t : Transaction(transactionType.equalsIgnoreCase("WIRE_TRANSFER"),
+                        channel != null && channel.equalsIgnoreCase("ONLINE"),
+                        amount >= 50000)
+        $r : TaggingResult()
+    then
+        $r.addTag("LARGE_WIRE_ONLINE");
+        $r.addTag("ENHANCED_MONITORING");
+        $r.updateRiskLevel("HIGH");
+        $r.recordAppliedRule("HIGH_RISK_COMBINATION_CRYPTO_WIRE");
+end
+
+rule "OFFSHORE_HIGH_VALUE"
+    salience 115
+    when
+        $t : Transaction(countryCode != null,
+                        (countryCode.equalsIgnoreCase("KY") || countryCode.equalsIgnoreCase("BS")),
+                        amount >= 100000)
+        $r : TaggingResult()
+    then
+        $r.addTag("OFFSHORE_HIGH_VALUE");
+        $r.addTag("TAX_HAVEN");
+        $r.addTag("SOURCE_OF_FUNDS");
+        $r.updateRiskLevel("CRITICAL");
+        $r.flagForReview("High-value transaction to offshore jurisdiction");
+        $r.recordAppliedRule("OFFSHORE_HIGH_VALUE");
+end
+
+// ============================================================================
+// DEFAULT RULE
+// ============================================================================
+
+rule "DEFAULT_LOW_RISK_TAG"
+    salience -100
+    when
+        $t : Transaction()
+        $r : TaggingResult(tags.isEmpty())
+    then
+        $r.addTag("STANDARD");
+        $r.recordAppliedRule("DEFAULT_LOW_RISK_TAG");
+end

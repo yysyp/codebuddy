@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Flink JobManager
+  jobmanager:
+    image: flink:1.18.1-scala_2.12-java11
+    container_name: flink-jobmanager
+    hostname: jobmanager
+    ports:
+      - "8081:8081"  # Flink Web UI
+    command: jobmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - FLINK_PROPERTIES=
+          jobmanager.rpc.address: jobmanager
+          jobmanager.rpc.port: 6123
+          jobmanager.memory.process.size: 2048m
+          jobmanager.memory.jvm-metaspace.size: 512m
+    volumes:
+      - ./target:/opt/flink/jars:ro
+      - ./output:/opt/flink/output
+      - ./data:/opt/flink/data
+      - ./logs:/opt/flink/logs
+    networks:
+      - flink-network
+
+  # Flink TaskManager
+  taskmanager:
+    image: flink:1.18.1-scala_2.12-java11
+    container_name: flink-taskmanager
+    hostname: taskmanager
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - FLINK_PROPERTIES=
+          jobmanager.rpc.address: jobmanager
+          taskmanager.rpc.port: 6122
+          taskmanager.memory.process.size: 4096m
+          taskmanager.memory.flink.size: 3072m
+          taskmanager.numberOfTaskSlots: 4
+          parallelism.default: 2
+    volumes:
+      - ./target:/opt/flink/jars:ro
+      - ./output:/opt/flink/output
+      - ./data:/opt/flink/data
+      - ./logs:/opt/flink/logs
+    networks:
+      - flink-network
+
+networks:
+  flink-network:
+    driver: bridge
