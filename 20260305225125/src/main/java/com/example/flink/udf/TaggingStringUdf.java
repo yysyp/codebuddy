@@ -3,6 +3,7 @@ package com.example.flink.udf;
 import com.example.flink.model.Transaction;
 import com.example.flink.rules.DroolsRuleEngine;
 import com.example.flink.rules.TaggingResult;
+import org.apache.flink.table.annotation.DataTypeHint;
 import org.apache.flink.table.functions.FunctionContext;
 import org.apache.flink.table.functions.ScalarFunction;
 import org.slf4j.Logger;
@@ -44,13 +45,23 @@ public class TaggingStringUdf extends ScalarFunction {
     /**
      * Evaluates tagging rules and returns result as delimited string.
      * Format: RISK_LEVEL|TAGS|APPLIED_RULES
+     * Using String for amount to avoid Flink type inference issues with BigDecimal.
      */
+    @DataTypeHint("STRING")
     public String eval(
-            String transactionId,
-            String accountId,
-            BigDecimal amount,
-            String currency,
-            String transactionType) {
+            @DataTypeHint("STRING") String transactionId,
+            @DataTypeHint("STRING") String accountId,
+            @DataTypeHint("STRING") String amountStr,
+            @DataTypeHint("STRING") String currency,
+            @DataTypeHint("STRING") String transactionType) {
+        
+        BigDecimal amount;
+        try {
+            amount = amountStr != null ? new BigDecimal(amountStr) : BigDecimal.ZERO;
+        } catch (NumberFormatException e) {
+            LOG.warn("Invalid amount format: {}", amountStr);
+            amount = BigDecimal.ZERO;
+        }
         
         return evalWithDetails(transactionId, accountId, null, amount, currency, 
                 transactionType, null, null, null, null);
@@ -120,27 +131,6 @@ public class TaggingStringUdf extends ScalarFunction {
             // Return safe default on error to allow processing to continue
             return "MEDIUM|RULE_ERROR|ERROR";
         }
-    }
-    
-    /**
-     * Alternative evaluation method with string amount (for SQL compatibility).
-     */
-    public String evalWithStringAmount(
-            String transactionId,
-            String accountId,
-            String amountStr,
-            String currency,
-            String transactionType) {
-        
-        BigDecimal amount;
-        try {
-            amount = amountStr != null ? new BigDecimal(amountStr) : BigDecimal.ZERO;
-        } catch (NumberFormatException e) {
-            LOG.warn("Invalid amount format: {}", amountStr);
-            amount = BigDecimal.ZERO;
-        }
-        
-        return eval(transactionId, accountId, amount, currency, transactionType);
     }
     
     private String formatResult(TaggingResult result) {

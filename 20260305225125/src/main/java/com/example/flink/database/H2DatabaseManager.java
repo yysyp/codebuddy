@@ -68,7 +68,12 @@ public class H2DatabaseManager implements AutoCloseable {
         try {
             if (!initialized) {
                 createSchema();
-                insertSampleData();
+                // Only insert sample data if table is empty
+                if (isTableEmpty()) {
+                    insertSampleData();
+                } else {
+                    LOG.info("Transactions table already contains data, skipping sample data insertion");
+                }
                 connection.commit();
                 initialized = true;
                 LOG.info("Database initialized successfully");
@@ -80,6 +85,22 @@ public class H2DatabaseManager implements AutoCloseable {
         } finally {
             connectionLock.unlock();
         }
+    }
+    
+    /**
+     * Checks if the transactions table is empty.
+     */
+    private boolean isTableEmpty() throws SQLException {
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM transactions")) {
+            if (rs.next()) {
+                return rs.getInt(1) == 0;
+            }
+        } catch (SQLException e) {
+            // Table might not exist yet
+            return true;
+        }
+        return true;
     }
     
     /**

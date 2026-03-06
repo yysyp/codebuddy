@@ -1,12 +1,16 @@
 package com.example.flink;
 
 import com.example.flink.database.H2DatabaseManager;
+import com.example.flink.model.Transaction;
 import com.example.flink.udf.TaggingStringUdf;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
+import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +18,8 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
+import java.util.List;
 
 /**
  * Flink SQL Job for applying Drools-based tagging rules to transaction data.
@@ -40,7 +46,7 @@ public class FlinkSqlTaggingJob {
         }
         
         // Initialize H2 database with sample data
-        initializeDatabase();
+        H2DatabaseManager dbManager = initializeDatabase();
         
         // Set up Flink environment
         StreamExecutionEnvironment env = createExecutionEnvironment(localMode);
@@ -56,14 +62,24 @@ public class FlinkSqlTaggingJob {
         // Register UDF
         registerUdfs(tableEnv);
         
-        // Create source table from H2
-        createSourceTable(tableEnv);
+        // Read data from H2 using DataStream API
+        List<Transaction> transactions = dbManager.getAllTransactions();
+        LOG.info("Loaded {} transactions from H2 database", transactions.size());
+        
+        // Create DataStream from collection
+        DataStream<Transaction> transactionStream = env.fromCollection(transactions);
+        
+        // Register as temporary view for SQL processing
+        tableEnv.createTemporaryView("transactions_source", transactionStream);
         
         // Create sink table for CSV output
         createSinkTable(tableEnv, outputPath);
         
         // Execute tagging logic using SQL
         executeTaggingSql(tableEnv);
+        
+        // Close database manager
+        dbManager.close();
         
         // Execute job
         env.execute(JOB_NAME);
@@ -231,14 +247,15 @@ public class FlinkSqlTaggingJob {
                 description,
                 -- Apply tagging rules using UDF
                 -- UDF returns format: RISK_LEVEL|TAGS|APPLIED_RULES
+                -- Cast amount to STRING for UDF compatibility
                 SPLIT_INDEX(ApplyTaggingRules(
-                    transaction_id, account_id, amount, currency, transaction_type
+                    transaction_id, account_id, CAST(amount AS STRING), currency, transaction_type
                 ), '|', 0) AS risk_level,
                 SPLIT_INDEX(ApplyTaggingRules(
-                    transaction_id, account_id, amount, currency, transaction_type
+                    transaction_id, account_id, CAST(amount AS STRING), currency, transaction_type
                 ), '|', 1) AS tags,
                 SPLIT_INDEX(ApplyTaggingRules(
-                    transaction_id, account_id, amount, currency, transaction_type
+                    transaction_id, account_id, CAST(amount AS STRING), currency, transaction_type
                 ), '|', 2) AS applied_rules,
                 CURRENT_TIMESTAMP AS processing_time
             FROM transactions_source
