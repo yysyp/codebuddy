@@ -1,0 +1,35 @@
+# Flink Job Configuration
+flink:
+  job:
+    job-name: transaction-tagging-job
+    parallelism: 2
+    input-path: src/main/resources/data/transactions.csv
+    output-path: output/tagged_transactions.csv
+    checkpointing-enabled: true
+    checkpoint-interval: 30s
+    min-pause-between-checkpoints: 5s
+    checkpoint-timeout: 10m
+    max-concurrent-checkpoints: 1
+    unaligned-checkpoints: false
+    restart-strategy: fixed-delay
+    restart-attempts: 3
+    restart-delay: 10s
+    batch-size: 1000
+    metrics-enabled: true
+    metrics-interval: 60s
+
+# Spring Boot Configuration
+spring:
+  main:
+    banner-mode: off
+    web-application-type: none
+  application:
+    name: flink-transaction-tagging
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.example.flink: INFO
+    org.apache.flink: WARN
+    org.drools: WARN
