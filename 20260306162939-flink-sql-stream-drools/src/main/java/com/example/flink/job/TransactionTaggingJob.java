@@ -10,6 +10,7 @@ import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.serialization.SimpleStringEncoder;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.file.sink.FileSink;
 import org.apache.flink.connector.file.src.FileSource;
@@ -314,9 +315,23 @@ public class TransactionTaggingJob {
                     .uid("filter-null-results");
 
             // Convert to Row format for CSV output
+            // Define explicit row type info with field names and types
+            TypeInformation<Row> rowTypeInfo = Types.ROW_NAMED(
+                    new String[]{
+                            "transaction_id", "account_id", "amount", "currency", "transaction_type",
+                            "counterparty_id", "counterparty_name", "description", "transaction_time",
+                            "country_code", "ip_address", "device_id", "risk_score",
+                            "tags", "primary_tag", "tag_count", "processing_time", "trace_id"
+                    },
+                    Types.STRING, Types.STRING, Types.BIG_DEC, Types.STRING, Types.STRING,
+                    Types.STRING, Types.STRING, Types.STRING, Types.INSTANT,
+                    Types.STRING, Types.STRING, Types.STRING, Types.INT,
+                    Types.STRING, Types.STRING, Types.INT, Types.INSTANT, Types.STRING
+            );
+
             DataStream<Row> rowStream = taggedStream
-                    .map(this::toRow)
-                    .returns(Row.class)
+                    .map(new TransactionToRowMapper()::map)
+                    .returns(rowTypeInfo)
                     .name("ToRow")
                     .uid("to-row-map");
 
@@ -393,26 +408,42 @@ public class TransactionTaggingJob {
      * Convert TaggedTransaction to Row
      */
     private Row toRow(TaggedTransaction tx) {
-        return Row.of(
-                tx.getTransactionId(),
-                tx.getAccountId(),
-                tx.getAmount(),
-                tx.getCurrency(),
-                tx.getTransactionType(),
-                tx.getCounterpartyId(),
-                tx.getCounterpartyName(),
-                tx.getDescription(),
-                tx.getTransactionTime(),
-                tx.getCountryCode(),
-                tx.getIpAddress(),
-                tx.getDeviceId(),
-                tx.getRiskScore(),
-                tx.getTags(),
-                tx.getPrimaryTag(),
-                tx.getTagCount(),
-                tx.getProcessingTime(),
-                tx.getTraceId()
-        );
+        return TransactionToRowMapper.toRowStatic(tx);
+    }
+
+    /**
+     * Mapper to convert TaggedTransaction to Row
+     * Must be Serializable for Flink distributed execution
+     */
+    private static class TransactionToRowMapper implements java.io.Serializable {
+        private static final long serialVersionUID = 1L;
+
+        public Row map(TaggedTransaction tx) {
+            return toRowStatic(tx);
+        }
+
+        public static Row toRowStatic(TaggedTransaction tx) {
+            return Row.of(
+                    tx.getTransactionId(),
+                    tx.getAccountId(),
+                    tx.getAmount(),
+                    tx.getCurrency(),
+                    tx.getTransactionType(),
+                    tx.getCounterpartyId(),
+                    tx.getCounterpartyName(),
+                    tx.getDescription(),
+                    tx.getTransactionTime(),
+                    tx.getCountryCode(),
+                    tx.getIpAddress(),
+                    tx.getDeviceId(),
+                    tx.getRiskScore(),
+                    tx.getTags(),
+                    tx.getPrimaryTag(),
+                    tx.getTagCount(),
+                    tx.getProcessingTime(),
+                    tx.getTraceId()
+            );
+        }
     }
 
     /**

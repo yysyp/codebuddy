@@ -65,7 +65,7 @@ echo.
 REM 创建输出目录
 if not exist "output" mkdir output
 
-java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED -jar target\flink-transaction-tagging-1.0.0.jar datastream %INPUT_FILE% %OUTPUT_FILE%
+java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.Arrays=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.math=ALL-UNNAMED -jar target\flink-transaction-tagging-1.0.0.jar datastream %INPUT_FILE% %OUTPUT_FILE%
 goto end
 
 :hybrid_mode
