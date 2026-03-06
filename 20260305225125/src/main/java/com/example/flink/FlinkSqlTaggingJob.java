@@ -69,8 +69,21 @@ public class FlinkSqlTaggingJob {
         // Create DataStream from collection
         DataStream<Transaction> transactionStream = env.fromCollection(transactions);
         
-        // Register as temporary view for SQL processing
-        tableEnv.createTemporaryView("transactions_source", transactionStream);
+        // Register as temporary view for SQL processing with explicit column mapping
+        Table transactionsTable = tableEnv.fromDataStream(
+            transactionStream,
+            org.apache.flink.table.api.Expressions.$("transactionId").as("transaction_id"),
+            org.apache.flink.table.api.Expressions.$("accountId").as("account_id"),
+            org.apache.flink.table.api.Expressions.$("counterpartyAccount").as("counterparty_account"),
+            org.apache.flink.table.api.Expressions.$("amount"),
+            org.apache.flink.table.api.Expressions.$("currency"),
+            org.apache.flink.table.api.Expressions.$("transactionType").as("transaction_type"),
+            org.apache.flink.table.api.Expressions.$("channel"),
+            org.apache.flink.table.api.Expressions.$("countryCode").as("country_code"),
+            org.apache.flink.table.api.Expressions.$("transactionTime").as("transaction_time"),
+            org.apache.flink.table.api.Expressions.$("description")
+        );
+        tableEnv.createTemporaryView("transactions_source", transactionsTable);
         
         // Create sink table for CSV output
         createSinkTable(tableEnv, outputPath);
@@ -90,12 +103,13 @@ public class FlinkSqlTaggingJob {
     /**
      * Initializes the H2 database with sample transaction data.
      */
-    private static void initializeDatabase() {
+    private static H2DatabaseManager initializeDatabase() throws SQLException {
         LOG.info("Initializing H2 database...");
         try {
             H2DatabaseManager dbManager = H2DatabaseManager.getInstance();
             dbManager.initialize();
             LOG.info("H2 database initialized successfully");
+            return dbManager;
         } catch (Exception e) {
             LOG.error("Failed to initialize H2 database: {}", e.getMessage(), e);
             throw new RuntimeException("Database initialization failed", e);
@@ -147,44 +161,6 @@ public class FlinkSqlTaggingJob {
         tableEnv.createTemporarySystemFunction("ApplyTaggingRules", TaggingStringUdf.class);
         
         LOG.info("UDFs registered successfully");
-    }
-    
-    /**
-     * Creates the source table connecting to H2 database.
-     */
-    private static void createSourceTable(StreamTableEnvironment tableEnv) {
-        LOG.info("Creating source table from H2 database...");
-        
-        String jdbcUrl = H2DatabaseManager.getJdbcUrl();
-        String dbUser = H2DatabaseManager.getDbUser();
-        String dbPassword = H2DatabaseManager.getDbPassword();
-        
-        String createSourceSql = String.format("""
-            CREATE TABLE transactions_source (
-                transaction_id STRING,
-                account_id STRING,
-                counterparty_account STRING,
-                amount DECIMAL(19, 4),
-                currency STRING,
-                transaction_type STRING,
-                channel STRING,
-                country_code STRING,
-                transaction_time TIMESTAMP(3) WITH LOCAL TIME ZONE,
-                description STRING,
-                PRIMARY KEY (transaction_id) NOT ENFORCED
-            ) WITH (
-                'connector' = 'jdbc',
-                'url' = '%s',
-                'table-name' = 'transactions',
-                'username' = '%s',
-                'password' = '%s',
-                'driver' = 'org.h2.Driver',
-                'scan.fetch-size' = '100'
-            )
-            """, jdbcUrl, dbUser, dbPassword);
-        
-        tableEnv.executeSql(createSourceSql);
-        LOG.info("Source table 'transactions_source' created");
     }
     
     /**
