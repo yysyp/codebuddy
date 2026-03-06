@@ -1,6 +1,7 @@
 package com.example.flink.job;
 
 import com.example.flink.config.FlinkJobConfig;
+import com.example.flink.function.DroolsTaggingUDF;
 import com.example.flink.function.TransactionTaggingFunction;
 import com.example.flink.model.TaggedTransaction;
 import com.example.flink.model.Transaction;
@@ -123,25 +124,29 @@ public class TransactionTaggingJob {
     }
 
     /**
-     * Execute the job using Flink SQL approach
+     * Execute the job using Flink SQL approach with Drools UDF
      */
     public void executeSqlJob() throws Exception {
         initializeEnvironment();
 
         String traceId = java.util.UUID.randomUUID().toString();
-        log.info("[traceId={}] Starting Flink SQL Transaction Tagging Job", traceId);
+        log.info("[traceId={}] Starting Flink SQL Transaction Tagging Job with Drools UDF", traceId);
 
         try {
+            // Register Drools-based UDF
+            tableEnv.createTemporarySystemFunction("drools_tag", DroolsTaggingUDF.class);
+            log.info("[traceId={}] Registered Drools UDF function: drools_tag", traceId);
+
             // Create source table using DDL
             createSourceTable();
 
             // Create sink table using DDL
             createSinkTable();
 
-            // Execute SQL transformation with custom tagging
+            // Execute SQL transformation with Drools UDF
             String insertSql = buildInsertSql();
 
-            log.info("[traceId={}] Executing SQL: {}", traceId, insertSql);
+            log.info("[traceId={}] Executing SQL with Drools UDF: {}", traceId, insertSql);
 
             TableResult result = tableEnv.executeSql(insertSql);
 
@@ -234,8 +239,8 @@ public class TransactionTaggingJob {
     }
 
     /**
-     * Build the INSERT SQL statement with tagging logic
-     * Uses SQL CASE statements for simple rule-based tagging
+     * Build the INSERT SQL statement with Drools UDF for tagging
+     * Uses Drools rule engine via UDF instead of SQL CASE statements
      */
     private String buildInsertSql() {
         return "INSERT INTO tagged_transactions_sink\n" +
@@ -253,30 +258,43 @@ public class TransactionTaggingJob {
                 "    ip_address,\n" +
                 "    device_id,\n" +
                 "    risk_score,\n" +
-                "    CONCAT_WS(',',\n" +
-                "        CASE WHEN amount > 5000 THEN 'HIGH_AMOUNT' END,\n" +
-                "        CASE WHEN risk_score > 70 THEN 'HIGH_RISK' END,\n" +
-                "        CASE WHEN transaction_type = 'TRANSFER' THEN 'TRANSFER' END,\n" +
-                "        CASE WHEN country_code IS NULL OR country_code = '' THEN 'NO_COUNTRY' END,\n" +
-                "        CASE WHEN risk_score > 80 AND amount > 10000 THEN 'CRITICAL_RISK' END\n" +
-                "    ) AS tags,\n" +
-                "    CASE\n" +
-                "        WHEN risk_score > 80 AND amount > 10000 THEN 'CRITICAL_RISK'\n" +
-                "        WHEN risk_score > 70 THEN 'HIGH_RISK'\n" +
-                "        WHEN amount > 5000 THEN 'HIGH_AMOUNT'\n" +
-                "        WHEN transaction_type = 'TRANSFER' THEN 'TRANSFER'\n" +
-                "        ELSE 'NORMAL'\n" +
-                "    END AS primary_tag,\n" +
-                "    (\n" +
-                "        CASE WHEN amount > 5000 THEN 1 ELSE 0 END +\n" +
-                "        CASE WHEN risk_score > 70 THEN 1 ELSE 0 END +\n" +
-                "        CASE WHEN transaction_type = 'TRANSFER' THEN 1 ELSE 0 END +\n" +
-                "        CASE WHEN country_code IS NULL OR country_code = '' THEN 1 ELSE 0 END +\n" +
-                "        CASE WHEN risk_score > 80 AND amount > 10000 THEN 1 ELSE 0 END\n" +
-                "    ) AS tag_count,\n" +
+                "    tagging_result[1] AS tags,\n" +
+                "    tagging_result[2] AS primary_tag,\n" +
+                "    CAST(tagging_result[3] AS INT) AS tag_count,\n" +
                 "    CURRENT_TIMESTAMP AS processing_time,\n" +
                 "    CONCAT('FLINK-', CAST(UUID() AS STRING)) AS trace_id\n" +
-                "FROM transactions_source";
+                "FROM (\n" +
+                "    SELECT\n" +
+                "        transaction_id,\n" +
+                "        account_id,\n" +
+                "        amount,\n" +
+                "        currency,\n" +
+                "        transaction_type,\n" +
+                "        counterparty_id,\n" +
+                "        counterparty_name,\n" +
+                "        description,\n" +
+                "        transaction_time,\n" +
+                "        country_code,\n" +
+                "        ip_address,\n" +
+                "        device_id,\n" +
+                "        risk_score,\n" +
+                "        drools_tag(\n" +
+                "            transaction_id,\n" +
+                "            account_id,\n" +
+                "            amount,\n" +
+                "            currency,\n" +
+                "            transaction_type,\n" +
+                "            counterparty_id,\n" +
+                "            counterparty_name,\n" +
+                "            description,\n" +
+                "            transaction_time,\n" +
+                "            country_code,\n" +
+                "            ip_address,\n" +
+                "            device_id,\n" +
+                "            risk_score\n" +
+                "        ) AS tagging_result\n" +
+                "    FROM transactions_source\n" +
+                ") AS tagged";
     }
 
     /**
