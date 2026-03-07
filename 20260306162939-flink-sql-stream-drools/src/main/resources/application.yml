@@ -17,6 +17,10 @@ flink:
     batch-size: 1000
     metrics-enabled: true
     metrics-interval: 60s
+    rule-source: drl
+    # Rule source options: drl (DRL file), table (CSV table rules), decision-table (Drools Decision Table)
+    table-rules-path: rules/table-rules.csv
+    decision-table-path: rules/decision-table.xlsx
 
 # Spring Boot Configuration
 spring:

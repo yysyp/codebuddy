@@ -1,59 +1,59 @@
 # Flink Transaction Tagging
 
-基于 Apache Flink 和 Drools 规则引擎的交易标记应用。支持SQL模式、DataStream模式和Hybrid模式，并支持从DRL文件或CSV表格定义加载规则。
+A Flink SQL application with Drools rule engine for transaction tagging. Supports SQL mode, DataStream mode, and Hybrid mode, with support for loading rules from DRL files, CSV table definitions, and Drools Decision Tables.
 
-## 功能特性
+## Features
 
-- **多模式处理**: 支持 SQL、DataStream、Hybrid 三种处理模式
-- **规则引擎**: 集成 Drools 实现业务规则与计算逻辑分离
-- **双重规则源**: 支持从DRL文件或CSV表格定义加载规则
-- **CSV 支持**: 读取 CSV 格式的交易数据，输出带标记的结果
-- **灵活部署**: 支持本地运行和集群部署
-- **UDF集成**: SQL模式下通过用户定义函数(UDF)调用Drools规则引擎
+- **Multiple Processing Modes**: Supports SQL, DataStream, and Hybrid processing modes
+- **Rule Engine**: Integrates Drools for separation of business rules and computation logic
+- **Multiple Rule Sources**: Supports loading rules from DRL files, CSV table definitions, or Drools Decision Tables
+- **CSV Support**: Reads transaction data in CSV format and outputs tagged results
+- **Flexible Deployment**: Supports local execution and cluster deployment
+- **UDF Integration**: Calls Drools rule engine through user-defined functions (UDF) in SQL mode
 
-## 技术栈
+## Tech Stack
 
 - Apache Flink 1.16.3
 - Drools 8.44.0.Final
 - Spring Boot 3.2.0
 - Java 17+
 
-## 快速开始
+## Quick Start
 
-### 前置要求
+### Prerequisites
 
-- Java 17+ (建议使用 Zulu 或 Azul OpenJDK)
+- Java 17+ (Zulu or Azul OpenJDK recommended)
 - Maven 3.8+
 
-### 编译打包
+### Build and Package
 
-#### 方式一：使用 Maven 命令
+#### Method 1: Using Maven Commands
 
 ```bash
 mvn clean package -DskipTests
 ```
 
-#### 方式二：使用批处理脚本 (Windows)
+#### Method 2: Using Batch Script (Windows)
 
 ```bash
-# 双击运行 build.bat 即可编译
+# Double-click to run build.bat
 build.bat
 ```
 
-### 运行应用
+### Running the Application
 
-#### 方式一：使用批处理脚本 (推荐)
+#### Method 1: Using Batch Script (Recommended)
 
-双击运行 `run.bat`，根据提示选择模式：
+Double-click `run.bat` and select the mode:
 
-1. SQL 模式 (推荐，支持DRL和CSV表格两种规则源)
-2. DataStream 模式
-3. Hybrid 模式
-4. 生成测试数据
+1. SQL Mode (Recommended) - Supports DRL, CSV Table, and Decision Table rule sources
+2. DataStream Mode
+3. Hybrid Mode
+4. Generate Test Data
 
-#### 方式二：命令行运行
+#### Method 2: Command Line Execution
 
-所有运行命令在 JDK 17+ 上都需要添加 JVM 参数：
+All running commands require JVM parameters on JDK 17+:
 
 ```bash
 java --add-opens=java.base/java.util=ALL-UNNAMED ^
@@ -63,147 +63,245 @@ java --add-opens=java.base/java.util=ALL-UNNAMED ^
      -jar target/flink-transaction-tagging-1.0.0.jar <mode> <input> <output> [rule-source] [rule-path]
 ```
 
-参数说明：
-- `mode`: 处理模式，可选值：`sql`、`datastream`、`hybrid`、`generate`
-- `input`: 输入CSV文件路径（generate模式下为输出路径）
-- `output`: 输出CSV文件路径（generate模式下不需要）
-- `rule-source`: 可选，规则源类型，可选值：`drl`（默认，使用DRL文件）、`table`（使用CSV表格定义）
-- `rule-path`: 可选，规则文件路径，默认为 `src/main/resources/rules/transaction-tagging.drl` 或 `src/main/resources/rules/table-rules.csv`
+Parameters:
+- `mode`: Processing mode, options: `sql`, `datastream`, `hybrid`, `generate`
+- `input`: Input CSV file path (for generate mode, this is the output path)
+- `output`: Output CSV file path (not required for generate mode)
+- `rule-source`: Optional, rule source type, options: `drl` (default, uses DRL file), `table` (uses CSV table definition), `decision-table` (uses Drools Decision Table)
+- `rule-path`: Optional, rule file path, default is `src/main/resources/rules/transaction-tagging.drl` or `src/main/resources/rules/table-rules.csv` or `src/main/resources/rules/decision-table.xls`
 
-#### 1. 生成测试数据
+#### 1. Generate Test Data
 
 ```bash
-java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar generate <output-path>
+java --add-opens=java.base/java.util=ALL-UNNAMED ^
+     --add-opens=java.base/java.lang=ALL-UNNAMED ^
+     --add-opens=java.base/java.util.concurrent=ALL-UNNAMED ^
+     -jar target/flink-transaction-tagging-1.0.0.jar generate <output-path>
 ```
 
-示例：
+Example:
 ```bash
 java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar generate target/test-data/test.csv
 ```
 
-#### 2. SQL 模式 (推荐)
+#### 2. SQL Mode (Recommended)
 
-使用 Flink SQL 进行声明式处理，通过 UDF 调用 Drools 规则引擎：
+Uses Flink SQL for declarative processing and calls Drools rule engine through UDF:
 
-##### 使用 DRL 规则文件（默认）
+##### Using DRL Rule File (Default)
 
 ```bash
 java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar sql <input-csv> <output-csv>
 ```
 
-示例：
+Example:
 ```bash
 java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar sql src/main/resources/data/transactions.csv output/tagged_result.csv
 ```
 
-##### 使用 CSV 表格规则定义
+##### Using CSV Table Rule Definition
 
 ```bash
 java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar sql <input-csv> <output-csv> table <table-rules-path>
 ```
 
-示例：
+Example:
 ```bash
 java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar sql src/main/resources/data/transactions.csv output/tagged_result.csv table src/main/resources/rules/table-rules.csv
 ```
 
-#### 3. DataStream 模式
+##### Using Drools Decision Table
 
-使用 DataStream API 与 Drools 规则引擎集成：
+```bash
+java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar sql <input-csv> <output-csv> decision-table <decision-table-path>
+```
+
+Example:
+```bash
+java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar sql src/main/resources/data/transactions.csv output/tagged_result.csv decision-table src/main/resources/rules/decision-table.xls
+```
+
+#### 3. DataStream Mode
+
+Uses DataStream API integrated with Drools rule engine:
 
 ```bash
 java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar datastream <input-csv> <output-csv>
 ```
 
-#### 4. Hybrid 模式
+#### 4. Hybrid Mode
 
-结合 SQL 和 DataStream API：
+Combines SQL and DataStream APIs:
 
 ```bash
 java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar hybrid <input-csv> <output-csv>
 ```
 
-## 配置说明
+## Configuration
 
-### 应用配置 (application.yml)
+### Application Configuration (application.yml)
 
 ```yaml
 flink:
   job:
-    mode: sql                    # 处理模式: sql, datastream, hybrid
-    parallelism: 2               # 并行度
-    checkpoint-interval: 60000   # Checkpoint 间隔 (毫秒)
-    input-path: ""               # 输入路径
-    output-path: ""              # 输出路径
-    rule-source: drl             # 规则源: drl (DRL文件) 或 table (CSV表格)
-    table-rules-path: rules/table-rules.csv  # 表格规则文件路径
+    mode: sql                    # Processing mode: sql, datastream, hybrid
+    parallelism: 2               # Parallelism
+    checkpoint-interval: 60000   # Checkpoint interval (milliseconds)
+    input-path: ""               # Input path
+    output-path: ""              # Output path
+    rule-source: drl             # Rule source: drl (DRL file), table (CSV table), decision-table (Drools Decision Table)
+    table-rules-path: rules/table-rules.csv  # Table rules file path
+    decision-table-path: rules/decision-table.xls  # Decision table file path
 ```
 
-### 规则配置
+### Rule Configuration
 
-应用支持两种规则配置方式：
+The application supports three rule configuration methods:
 
-#### 1. DRL 规则文件（传统方式）
+#### 1. DRL Rule File (Traditional Method)
 
-规则文件位于: `src/main/resources/rules/transaction-tagging.drl`
+Rule file location: `src/main/resources/rules/transaction-tagging.drl`
 
-这种方式直接编写Drools DRL规则文件，适合复杂的规则逻辑。
+This method writes Drools DRL rule files directly, suitable for complex rule logic.
 
-#### 2. CSV 表格规则定义（推荐）
+#### 2. CSV Table Rule Definition (Recommended)
 
-规则文件位于: `src/main/resources/rules/table-rules.csv`
+Rule file location: `src/main/resources/rules/table-rules.csv`
 
-这种方式使用CSV表格定义规则，更容易维护和管理，业务人员也能理解。
+This method uses CSV tables to define rules, easier to maintain and understand, and business personnel can also understand it.
 
-##### 表格规则格式
+##### Table Rule Format
 
 ```csv
 rule_name,field_name,operator,threshold_value,tag,priority,condition_type
-HIGH_AMOUNT,amount,>,10000,HIGH_AMOUNT,5,simple
-VERY_HIGH_AMOUNT,amount,>,50000,VERY_HIGH_AMOUNT,10,simple
-HIGH_RISK,risk_score,>,50,HIGH_RISK,5,simple
-INTERNATIONAL,country_code,<>,US,INTERNATIONAL,3,simple
+HIGH_AMOUNT,amount,>,10000,HIGH_AMOUNT,100,simple
+VERY_HIGH_AMOUNT,amount,>,50000,VERY_HIGH_AMOUNT,110,simple
+HIGH_RISK,riskScore,>,50,HIGH_RISK,90,simple
+INTERNATIONAL,countryCode,<>,US,INTERNATIONAL,45,simple
 ```
 
-字段说明：
-- `rule_name`: 规则名称（唯一标识）
-- `field_name`: 要检查的字段名（amount, risk_score, country_code, transaction_type等）
-- `operator`: 比较操作符（>, >=, <, <=, =, !=, in, not_in）
-- `threshold_value`: 阈值（数值、字符串或逗号分隔的列表）
-- `tag`: 匹配时添加的标签
-- `priority`: 优先级（数字越大优先级越高，用于primary_tag选择）
-- `condition_type`: 条件类型（simple: 简单条件, complex: 复杂条件组合）
+Field descriptions:
+- `rule_name`: Rule name (unique identifier)
+- `field_name`: Field name to check (amount, risk_score, country_code, transaction_type, etc.)
+- `operator`: Comparison operator (>, >=, <, <=, =, !=, in, not_in)
+- `threshold_value`: Threshold value (number, string, or comma-separated list)
+- `tag`: Tag to add when matched
+- `priority`: Priority (higher number = higher priority, used for primary_tag selection)
+- `condition_type`: Condition type (simple: simple condition, compound: complex condition combination)
 
-支持的比较操作符：
-- `>` 大于
-- `>=` 大于等于
-- `<` 小于
-- `<=` 小于等于
-- `=` 等于
-- `!=` 不等于
-- `in` 包含在列表中（用于枚举值）
-- `not_in` 不包含在列表中
+Supported comparison operators:
+- `>` Greater than
+- `>=` Greater than or equal to
+- `<` Less than
+- `<=` Less than or equal to
+- `=` Equal to
+- `!=` Not equal to
+- `in` Included in list (for enumeration values)
+- `not_in` Not included in list
 
-#### 内置规则
+#### 3. Drools Decision Table (Advanced)
 
-| 规则名称 | 描述 | 标签 |
-|---------|------|------|
-| HIGH_AMOUNT | 金额 > 10000 | HIGH_AMOUNT |
-| VERY_HIGH_AMOUNT | 金额 > 50000 | VERY_HIGH_AMOUNT |
-| HIGH_RISK | 风险评分 > 50 | HIGH_RISK |
-| CRITICAL_RISK | 风险评分 > 75 | CRITICAL_RISK |
-| VERY_HIGH_RISK | 风险评分 > 90 | VERY_HIGH_RISK |
-| TRANSFER | 转账交易 | TRANSFER |
-| PAYMENT | 支付交易 | PAYMENT |
-| DEBIT | 借记交易 | DEBIT |
-| CREDIT | 贷记交易 | CREDIT |
-| REFUND | 退款交易 | REFUND |
-| INTERNATIONAL | 国际交易 | INTERNATIONAL |
-| NO_COUNTRY | 无国家信息 | NO_COUNTRY |
-| SUSPICIOUS | 可疑交易 | SUSPICIOUS |
-| HIGH_RISK_INTERNATIONAL | 高风险国际交易 | HIGH_RISK_INTERNATIONAL |
+Rule file location: `src/main/resources/rules/decision-table.xlsx` (Excel format)
 
-### 输入数据格式 (CSV)
+Drools Decision Tables are spreadsheet-based rule definitions that provide a visual way to manage business rules. They compile to DRL format at runtime.
+
+**Important Notes:** 
+- Drools Decision Tables require Excel (.xls or .xlsx) format for proper functionality
+- The application automatically detects the file format based on extension
+- CSV-based decision tables are not fully supported by Drools and may produce parsing errors
+- For production use, always use Excel format decision tables
+
+**Fallback Behavior:** If the decision table fails to compile or has errors, the application will automatically fall back to using the default DRL rules (`src/main/resources/rules/transaction-tagging.drl`). This ensures the application continues to function even if there are issues with the decision table format.
+
+**Running with Decision Tables:**
+
+```bash
+# Using run.bat, select option 3 for Decision Table
+# Default path: src/main/resources/rules/decision-table.xlsx
+
+# Or using command line:
+java -jar target/flink-transaction-tagging-1.0.0.jar sql input.csv output.csv decision-table src/main/resources/rules/decision-table.xlsx
+```
+
+##### Creating a Decision Table
+
+Drools Decision Tables must be in Excel (.xls) format with specific structure:
+
+**Basic Structure:**
+
+| Column | Description |
+|--------|-------------|
+| RuleSet | Rule set name |
+| Import | Import statements (e.g., com.example.flink.model.Transaction) |
+| RuleTable | Start of a rule table definition |
+| CONDITION | Condition columns (LHS of rules) |
+| ACTION | Action columns (RHS of rules) |
+| | Rule-specific values |
+
+**Example Decision Table Format:**
+
+| RuleSet | | | |
+|---------|---|---|---|
+| TransactionRules | | | |
+| Import | | | |
+| com.example.flink.model.Transaction | | | |
+| Import | | | |
+| org.slf4j.Logger | | | |
+| RuleTable High Amount Rules | | | |
+| CONDITION | ACTION | | |
+| $tx:Transaction( | $tx.addTag("") | | |
+| $tx.amount > | | | |
+| 10000 | HIGH_AMOUNT | | |
+| 50000 | VERY_HIGH_AMOUNT | | |
+
+**Key Points:**
+- Decision tables must be in Excel format (.xls or .xlsx)
+- The application automatically detects the format based on file extension
+- Each `RuleTable` defines a set of related rules
+- Conditions and Actions are specified in column headers
+- Each row after the header represents a rule
+- Empty cells mean that condition/action is not part of that rule
+
+**Best Practices:**
+- Group related rules in separate RuleTables
+- Use meaningful names for RuleTables
+- Keep decision tables focused on specific rule categories
+- Test generated DRL to ensure correctness
+
+**Advantages of Decision Tables:**
+- Visual, business-friendly rule definition
+- Easy to maintain and update
+- Non-technical users can manage rules
+- Automatic DRL generation
+- Version control friendly
+
+**When to Use:**
+- Many similar rules with pattern-based conditions
+- Business users need to manage rules
+- Frequent rule updates expected
+- Complex rule combinations needed
+
+#### Built-in Rules
+
+| Rule Name | Description | Tag |
+|-----------|-------------|-----|
+| HIGH_AMOUNT | Amount > 10000 | HIGH_AMOUNT |
+| VERY_HIGH_AMOUNT | Amount > 50000 | VERY_HIGH_AMOUNT |
+| HIGH_RISK | Risk score > 70 | HIGH_RISK |
+| CRITICAL_RISK | Risk score > 90 | CRITICAL_RISK |
+| VERY_HIGH_RISK | Risk score >= 80 | VERY_HIGH_RISK |
+| TRANSFER | Transfer transaction | TRANSFER |
+| PAYMENT | Payment transaction | PAYMENT |
+| DEBIT | Debit transaction | DEBIT |
+| CREDIT | Credit transaction | CREDIT |
+| REFUND | Refund transaction | REFUND |
+| INTERNATIONAL | International transaction | INTERNATIONAL |
+| NO_COUNTRY | No country information | NO_COUNTRY |
+| SUSPICIOUS | Suspicious transaction | SUSPICIOUS |
+| HIGH_RISK_INTERNATIONAL | High-risk international transaction | HIGH_RISK_INTERNATIONAL |
+| LOW_AMOUNT | Amount < 10 | LOW_AMOUNT |
+
+### Input Data Format (CSV)
 
 ```csv
 transaction_id,timestamp,amount,currency,transaction_type,risk_score,country,merchant_name,account_id
@@ -211,40 +309,40 @@ TXN001,2024-01-15T10:30:00,15000.00,USD,TRANSFER,85,US,ABC Corp,ACC123
 TXN002,2024-01-15T11:45:00,250.50,CNY,PAYMENT,20,CN,XYZ Store,ACC456
 ```
 
-字段说明：
-- `transaction_id`: 交易唯一标识
-- `account_id`: 账户ID
-- `amount`: 交易金额
-- `currency`: 货币类型
-- `transaction_type`: 交易类型 (TRANSFER, PAYMENT, DEBIT, CREDIT, REFUND)
-- `counterparty_id`: 对手方ID
-- `counterparty_name`: 对手方名称
-- `description`: 交易描述
-- `transaction_time`: 交易时间
-- `country_code`: 国家代码
-- `ip_address`: IP地址
-- `device_id`: 设备ID
-- `risk_score`: 风险评分 (0-100)
+Field descriptions:
+- `transaction_id`: Unique transaction identifier
+- `account_id`: Account ID
+- `amount`: Transaction amount
+- `currency`: Currency type
+- `transaction_type`: Transaction type (TRANSFER, PAYMENT, DEBIT, CREDIT, REFUND)
+- `counterparty_id`: Counterparty ID
+- `counterparty_name`: Counterparty name
+- `description`: Transaction description
+- `transaction_time`: Transaction time
+- `country_code`: Country code
+- `ip_address`: IP address
+- `device_id`: Device ID
+- `risk_score`: Risk score (0-100)
 
-### 输出数据格式 (CSV)
+### Output Data Format (CSV)
 
-输出文件包含以下字段（在输入字段基础上增加）：
+The output file contains the following fields (in addition to input fields):
 
 ```csv
 transaction_id,account_id,amount,currency,transaction_type,counterparty_id,counterparty_name,description,transaction_time,country_code,ip_address,device_id,risk_score,tags,primary_tag,tag_count,processing_time,trace_id
 TXN-001,ACC001,150.00,USD,DEBIT,MERCH001,Amazon,Online purchase,2024-01-15T10:30:00Z,US,192.168.1.1,DEV001,25,"DEBIT",DEBIT,1,2024-01-15T10:30:35.000Z,FLINK-abc123
 ```
 
-新增字段说明：
-- `tags`: 所有匹配的规则标签，用逗号分隔
-- `primary_tag`: 主要标签（优先级最高的标签）
-- `tag_count`: 匹配的标签总数
-- `processing_time`: 处理时间戳
-- `trace_id`: 追踪ID，用于问题排查
+New field descriptions:
+- `tags`: All matched rule tags, comma-separated
+- `primary_tag`: Primary tag (highest priority tag)
+- `tag_count`: Total number of matched tags
+- `processing_time`: Processing timestamp
+- `trace_id`: Trace ID for troubleshooting
 
-**注意**: Flink CSV输出可能包含一些空列，实际使用时请关注tags、primary_tag和tag_count这三个核心字段。
+**Note:** Flink CSV output may contain some empty columns. In actual use, please focus on the three core fields: `tags`, `primary_tag`, and `tag_count`.
 
-### 示例输出
+### Example Output
 
 ```csv
 TXN-001,ACC001,150.00,USD,DEBIT,MERCH001,Amazon,Online purchase,2024-01-15T10:30:00Z,US,192.168.1.1,DEV001,25,"DEBIT",DEBIT,1,2024-01-15T10:30:35.000Z,FLINK-abc123
@@ -253,61 +351,64 @@ TXN-003,ACC003,5.50,USD,DEBIT,MERCH003,Starbucks,Coffee purchase,2024-01-15T11:1
 TXN-004,ACC001,75000.00,EUR,TRANSFER,MERCH004,International Bank,International wire,2024-01-15T12:00:00Z,DE,192.168.1.4,DEV003,95,"HIGH_RISK_INTERNATIONAL,SUSPICIOUS,CRITICAL_RISK,VERY_HIGH_RISK,VERY_HIGH_AMOUNT,HIGH_AMOUNT,HIGH_RISK,TRANSFER,INTERNATIONAL",HIGH_RISK_INTERNATIONAL,9,2024-01-15T12:05:50.000Z,FLINK-jkl012
 ```
 
-结果说明：
-- TXN-001: 普通借记交易，无特殊标签
-- TXN-002: 高额高风险转账，标记为可疑交易
-- TXN-003: 低额借记交易，标记为低金额
-- TXN-004: 高风险国际转账，匹配9个标签
+Result descriptions:
+- TXN-001: Normal debit transaction, no special tags
+- TXN-002: High amount high-risk transfer, marked as suspicious transaction
+- TXN-003: Low amount debit transaction, marked as low amount
+- TXN-004: High-risk international transfer, matched 9 tags
 
-## 运行测试
+## Running Tests
 
 ```bash
-# 运行所有测试
+# Run all tests
 mvn test
 
-# 运行特定测试
+# Run specific test
 mvn test -Dtest=RuleEngineServiceTest
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 src/
 ├── main/
 │   ├── java/com/example/flink/
-│   │   ├── TransactionTaggingApplication.java  # 主应用入口
+│   │   ├── TransactionTaggingApplication.java  # Main application entry point
 │   │   ├── config/
-│   │   │   └── FlinkJobConfig.java             # Flink 配置类
+│   │   │   └── FlinkJobConfig.java             # Flink configuration class
 │   │   ├── function/
-│   │   │   ├── TransactionTaggingFunction.java # DataStream 处理函数
-│   │   │   └── TaggingScalarFunction.java      # Flink SQL 标量函数
+│   │   │   ├── TransactionTaggingFunction.java # DataStream processing function
+│   │   │   └── DroolsTaggingUDF.java           # Drools UDF
 │   │   ├── job/
-│   │   │   └── TransactionTaggingJob.java       # 作业执行逻辑
+│   │   │   └── TransactionTaggingJob.java       # Job execution logic
 │   │   ├── model/
-│   │   │   ├── Transaction.java                 # 交易数据模型
-│   │   │   ├── TaggedTransaction.java          # 带标记的交易
-│   │   │   └── TaggingResult.java              # 标记结果
+│   │   │   ├── Transaction.java                 # Transaction data model
+│   │   │   ├── TaggedTransaction.java          # Tagged transaction
+│   │   │   └── TaggingResult.java              # Tagging result
 │   │   ├── service/
-│   │   │   └── RuleEngineService.java           # Drools 规则引擎服务
+│   │   │   ├── RuleEngineService.java          # Drools rule engine service
+│   │   │   └── TableRuleParserService.java     # Table rule parser
 │   │   └── util/
-│   │       ├── CsvUtils.java                    # CSV 工具类
-│   │       └── TraceIdGenerator.java            # 追踪ID生成器
+│   │       ├── CsvUtils.java                    # CSV utility class
+│   │       └── TraceIdGenerator.java            # Trace ID generator
 │   └── resources/
-│       ├── application.yml                      # 应用配置
-│       ├── logback.xml                           # 日志配置
+│       ├── application.yml                      # Application configuration
+│       ├── logback.xml                           # Log configuration
 │       ├── rules/
-│       │   └── transaction-tagging.drl         # Drools 规则文件
+│       │   ├── transaction-tagging.drl          # DRL rules
+│       │   ├── table-rules.csv                  # CSV table rules
+│       │   └── decision-table.xls               # Drools Decision Table
 │       └── data/
-│           └── transactions.csv                 # 示例数据
+│           └── transactions.csv                 # Sample data
 └── test/
-    └── java/com/example/flink/                  # 单元测试
+    └── java/com/example/flink/                  # Unit tests
 ```
 
-## 常见问题
+## Common Issues
 
-### 1. JDK 17+ 序列化问题
+### 1. JDK 17+ Serialization Issue
 
-Flink 使用 Kryo 序列化，在 JDK 17+ 上会遇到模块化限制，需要添加 JVM 参数：
+Flink uses Kryo serialization and encounters module restrictions on JDK 17+. JVM parameters must be added:
 
 ```bash
 java --add-opens=java.base/java.util=ALL-UNNAMED ^
@@ -316,11 +417,11 @@ java --add-opens=java.base/java.util=ALL-UNNAMED ^
      -jar target/flink-transaction-tagging-1.0.0.jar <mode> <input> <output>
 ```
 
-或者使用 `run.bat` 脚本，已自动包含这些参数。
+Or use the `run.bat` script, which automatically includes these parameters.
 
-### 2. 编译错误 (ExceptionInInitializerError)
+### 2. Compilation Error (ExceptionInInitializerError)
 
-如果遇到 Maven 编译错误，确保 `pom.xml` 中的编译器插件配置包含：
+If you encounter a Maven compilation error, ensure the compiler plugin configuration in `pom.xml` includes:
 
 ```xml
 <release>17</release>
@@ -331,107 +432,139 @@ java --add-opens=java.base/java.util=ALL-UNNAMED ^
 </compilerArgs>
 ```
 
-### 3. Checkpoint 失败
+### 3. Checkpoint Failure
 
-确保输出目录存在且有写入权限：
+Ensure the output directory exists and has write permissions:
 
 ```bash
 mkdir output
 ```
 
-### 4. 规则文件找不到
+### 4. Rule File Not Found
 
-规则文件必须位于：
-- DRL文件: `src/main/resources/rules/transaction-tagging.drl`
-- CSV表格: `src/main/resources/rules/table-rules.csv`
+Rule files must be located at:
+- DRL file: `src/main/resources/rules/transaction-tagging.drl`
+- CSV table: `src/main/resources/rules/table-rules.csv`
+- Decision table: `src/main/resources/rules/decision-table.xls`
 
-### 5. CSV输出格式问题
+### 5. CSV Output Format Issue
 
-Flink的CSV文件输出可能会包含一些空列，这是正常的。重点关注以下字段：
-- `tags`: 所有匹配的规则标签（逗号分隔）
-- `primary_tag`: 主要标签（优先级最高的标签）
-- `tag_count`: 匹配的标签总数
+Flink's CSV file output may contain some empty columns, which is normal. Focus on the following fields:
+- `tags`: All matched rule tags (comma-separated)
+- `primary_tag`: Primary tag (highest priority tag)
+- `tag_count`: Total number of matched tags
 
-### 6. 如何选择规则源？
+### 6. How to Choose a Rule Source?
 
-- **DRL文件**: 适合复杂的规则逻辑，需要开发人员维护
-- **CSV表格**: 适合简单的条件规则，业务人员也能理解，推荐使用
+- **DRL File**: Suitable for complex rule logic, requires developer maintenance
+- **CSV Table**: Suitable for simple conditional rules, business personnel can understand, recommended for general use
+- **Decision Table**: Suitable for rule sets with many similar patterns, visual management, suitable for business user management
 
-### 7. 如何自定义规则？
+### 7. How to Customize Rules?
 
-使用CSV表格定义规则更简单：
+Using CSV table definitions to define rules is simpler:
 
-1. 打开 `src/main/resources/rules/table-rules.csv`
-2. 添加或修改规则行
-3. 重新编译并运行应用
+1. Open `src/main/resources/rules/table-rules.csv`
+2. Add or modify rule rows
+3. Recompile and run the application
 
-示例：添加一个新规则检测中金额交易
+Example: Add a new rule to detect medium amount transactions
 ```csv
-MEDIUM_AMOUNT,amount,>=,5000,MEDIUM_AMOUNT,3,simple
+MEDIUM_AMOUNT,amount,>=,5000,MEDIUM_AMOUNT,80,simple
 ```
 
-### 8. 性能优化建议
+### 8. Performance Optimization Recommendations
 
-- 对于大批量数据处理，可以调整 `flink.job.parallelism` 参数增加并行度
-- 使用 CSV 表格规则比 DRL 文件解析更快
-- 确保 JVM 堆内存足够：`-Xmx2g -Xms2g`
+- For large batch data processing, adjust the `flink.job.parallelism` parameter to increase parallelism
+- Using CSV table rules is faster than DRL file parsing
+- Ensure JVM heap memory is sufficient: `-Xmx2g -Xms2g`
 
-## 快速参考
+## Quick Reference
 
-### 常用命令
+### Common Commands
 
 ```bash
-# 编译项目
+# Build project
 mvn clean package -DskipTests
 
-# 运行 SQL 模式 (使用 DRL 规则)
+# Run SQL mode (using DRL rules)
 java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar sql input.csv output.csv
 
-# 运行 SQL 模式 (使用 CSV 表格规则)
+# Run SQL mode (using CSV table rules)
 java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar sql input.csv output.csv table src/main/resources/rules/table-rules.csv
 
-# 运行 DataStream 模式
+# Run SQL mode (using Decision Table)
+java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar sql input.csv output.csv decision-table src/main/resources/rules/decision-table.xls
+
+# Run DataStream mode
 java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar datastream input.csv output.csv
 
-# 生成测试数据
+# Generate test data
 java --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED -jar target/flink-transaction-tagging-1.0.0.jar generate test.csv
 ```
 
-### 文件结构
+### File Structure
 
 ```
-项目根目录/
-├── build.bat                          # 编译脚本
-├── run.bat                            # 运行脚本
-├── pom.xml                            # Maven 配置
-├── README.md                          # 项目文档
+Project Root/
+├── build.bat                          # Build script
+├── run.bat                            # Run script
+├── pom.xml                            # Maven configuration
+├── README.md                          # Project documentation
 ├── src/
 │   └── main/
 │       ├── java/com/example/flink/
-│       │   ├── TransactionTaggingApplication.java  # 主应用入口
+│       │   ├── TransactionTaggingApplication.java  # Main application entry point
 │       │   ├── config/
-│       │   │   └── FlinkJobConfig.java             # Flink 配置
+│       │   │   └── FlinkJobConfig.java             # Flink configuration
 │       │   ├── function/
 │       │   │   └── DroolsTaggingUDF.java           # Drools UDF
 │       │   ├── job/
-│       │   │   └── TransactionTaggingJob.java       # 作业执行
+│       │   │   └── TransactionTaggingJob.java       # Job execution
 │       │   ├── model/
-│       │   │   └── Transaction.java                 # 交易模型
+│       │   │   └── Transaction.java                 # Transaction model
 │       │   ├── service/
-│       │   │   ├── RuleEngineService.java          # 规则引擎服务
-│       │   │   └── TableRuleParserService.java     # 表格规则解析
+│       │   │   ├── RuleEngineService.java          # Rule engine service
+│       │   │   └── TableRuleParserService.java     # Table rule parser
 │       │   └── util/
-│       │       └── CsvUtils.java                    # CSV 工具
+│       │       └── CsvUtils.java                    # CSV utility
 │       └── resources/
-│           ├── application.yml                      # 应用配置
+│           ├── application.yml                      # Application configuration
 │           ├── rules/
-│           │   ├── transaction-tagging.drl          # DRL 规则
-│           │   └── table-rules.csv                  # CSV 表格规则
+│           │   ├── transaction-tagging.drl          # DRL rules
+│           │   ├── table-rules.csv                  # CSV table rules
+│           │   └── decision-table.xls               # Drools Decision Table
 │           └── data/
-│               └── transactions.csv                 # 测试数据
-└── output/                           # 输出目录
+│               └── transactions.csv                 # Test data
+└── output/                           # Output directory
 ```
 
-## 许可证
+## Decision Table Best Practices
+
+### Structure Guidelines
+
+1. **Organize by Category**: Group related rules into separate RuleTables
+2. **Clear Naming**: Use descriptive names for RuleTables
+3. **Consistent Format**: Maintain consistent structure across tables
+4. **Test Regularly**: Compile and test decision tables after changes
+
+### Maintenance Tips
+
+1. **Version Control**: Commit decision table files to git
+2. **Documentation**: Add comments within the decision table
+3. **Review Process**: Establish a review process for rule changes
+4. **Backup**: Keep backups of working decision table versions
+
+### Troubleshooting Decision Tables
+
+If decision tables fail to compile:
+
+1. **Check Format**: Ensure the file is in .xls format (not .xlsx)
+2. **Verify Structure**: Check that RuleTable headers are correct
+3. **Review Conditions**: Ensure conditions are valid Drools syntax
+4. **Test DRL**: Compile to DRL and review the generated rules
+5. **Check Dependencies**: Verify all imports are correct
+
+## License
 
 MIT License

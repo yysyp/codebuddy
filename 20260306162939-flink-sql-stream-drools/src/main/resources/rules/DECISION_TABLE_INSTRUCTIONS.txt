@@ -1,0 +1,197 @@
+Drools Decision Table Instructions
+=================================
+
+This file provides instructions for creating a Drools Decision Table (.xls format)
+for the Flink Transaction Tagging application.
+
+Creating a Decision Table
+--------------------------
+
+1. Open Microsoft Excel or compatible spreadsheet software
+2. Create a new workbook and save as "decision-table.xls" (must be .xls, not .xlsx)
+3. Follow the structure below to define your rules
+
+Basic Structure Example
+------------------------
+
+Column A: RuleSet
+Column B: (blank)
+Column C: (blank)
+Column D: (blank)
+
+Row 1: TransactionRules
+Row 2: (blank)
+Row 3: Import
+Row 4: com.example.flink.model.Transaction
+Row 5: Import
+Row 6: java.math.BigDecimal
+Row 7: Import
+Row 7: org.slf4j.Logger
+Row 8: (blank)
+Row 9: RuleTable High Amount Rules
+Row 10: CONDITION
+Row 11: $tx:Transaction(
+Row 12: $tx.amount >
+Row 13: 10000
+Row 14: 50000
+Row 15: (blank)
+Row 16: ACTION
+Row 17: $tx.addTag("")
+Row 18: HIGH_AMOUNT
+Row 19: VERY_HIGH_AMOUNT
+Row 20: (blank)
+
+Detailed Structure for Transaction Tagging
+--------------------------------------------
+
+Rule Table 1: High Amount Rules
+-------------------------------
+Columns:
+A: CONDITION
+B: ACTION
+
+Headers:
+Row 1: RuleSet
+Row 2: TransactionRules
+Row 3: (blank)
+Row 4: Import
+Row 5: com.example.flink.model.Transaction
+Row 6: Import
+Row 7: org.slf4j.Logger
+Row 8: (blank)
+Row 9: RuleTable High Amount Rules
+Row 10: CONDITION
+Row 11: $tx:Transaction(
+Row 12: $tx.amount >
+Row 13: 10000
+Row 14: 50000
+Row 15: (blank)
+Row 16: ACTION
+Row 17: $tx.addTag("")
+Row 18: HIGH_AMOUNT
+Row 19: VERY_HIGH_AMOUNT
+Row 20: (blank)
+
+This will generate two rules:
+- Rule 1: When amount > 10000, add tag "HIGH_AMOUNT"
+- Rule 2: When amount > 50000, add tag "VERY_HIGH_AMOUNT"
+
+Rule Table 2: Risk Score Rules
+-------------------------------
+Row 22: RuleTable Risk Score Rules
+Row 23: CONDITION
+Row 24: $tx:Transaction(
+Row 25: $tx.riskScore >
+Row 26: 50
+Row 27: 70
+Row 28: 80
+Row 29: 90
+Row 30: (blank)
+Row 31: ACTION
+Row 32: $tx.addTag("")
+Row 33: HIGH_RISK
+Row 34: CRITICAL_RISK
+Row 35: VERY_HIGH_RISK
+Row 36: VERY_HIGH_RISK
+Row 37: (blank)
+
+This will generate four rules:
+- When riskScore > 50, add tag "HIGH_RISK"
+- When riskScore > 70, add tag "CRITICAL_RISK"
+- When riskScore > 80, add tag "VERY_HIGH_RISK"
+- When riskScore > 90, add tag "VERY_HIGH_RISK"
+
+Rule Table 3: Transaction Type Rules
+------------------------------------
+Row 39: RuleTable Transaction Type Rules
+Row 40: CONDITION
+Row 41: $tx:Transaction(
+Row 42: $tx.transactionType ==
+Row 43: TRANSFER
+Row 44: PAYMENT
+Row 45: DEBIT
+Row 46: CREDIT
+Row 47: REFUND
+Row 48: (blank)
+Row 49: ACTION
+Row 50: $tx.addTag("")
+Row 51: TRANSFER
+Row 52: PAYMENT
+Row 53: DEBIT
+Row 54: CREDIT
+Row 55: REFUND
+Row 56: (blank)
+
+Rule Table 4: Country Rules
+---------------------------
+Row 58: RuleTable Country Rules
+Row 59: CONDITION
+Row 60: $tx:Transaction(
+Row 61: $tx.countryCode !=
+Row 62: US
+Row 63: (blank)
+Row 64: ACTION
+Row 65: $tx.addTag("")
+Row 66: INTERNATIONAL
+Row 67: (blank)
+
+Rule Table 5: Low Amount Rules
+-----------------------------
+Row 69: RuleTable Low Amount Rules
+Row 70: CONDITION
+Row 71: $tx:Transaction(
+Row 72: $tx.amount <
+Row 73: 10
+Row 74: (blank)
+Row 75: ACTION
+Row 76: $tx.addTag("")
+Row 77: LOW_AMOUNT
+Row 78: (blank)
+
+Important Notes
+---------------
+
+1. File Format: Must be .xls (Excel 97-2003), NOT .xlsx
+2. Empty Cells: Empty cells mean that condition/action is not part of that rule
+3. Row Order: Follow the exact order shown above
+4. Syntax: Use exact Drools syntax in condition and action cells
+5. Multiple Conditions: Add more CONDITION columns for complex rules
+6. Multiple Actions: Add more ACTION columns for multiple actions per rule
+
+Testing Your Decision Table
+----------------------------
+
+After creating your decision-table.xls file:
+
+1. Save it to: src/main/resources/rules/decision-table.xls
+2. Run the application with decision-table mode:
+   
+   java -jar target/flink-transaction-tagging-1.0.0.jar sql input.csv output.csv decision-table
+
+3. Check logs for compilation errors
+4. Verify rules are firing correctly in the output
+
+Troubleshooting
+---------------
+
+If you encounter errors:
+
+1. Verify the file is saved as .xls (not .xlsx)
+2. Check that all import statements are correct
+3. Ensure condition and action syntax is valid Drools
+4. Look for empty cells that should have values
+5. Review the Drools documentation for detailed syntax rules
+
+Advanced Features
+-----------------
+
+You can add more complex rules by:
+- Adding multiple CONDITION columns
+- Adding multiple ACTION columns
+- Using complex Drools expressions
+- Setting rule priorities (salience)
+- Adding metadata to rules
+
+For more information, refer to:
+- Drools Documentation: https://docs.drools.org/latest/drools-docs/html_single/index.html
+- Decision Table Guide: https://docs.drools.org/latest/drools-docs/html_single/index.html#drg-tables-decision-tables

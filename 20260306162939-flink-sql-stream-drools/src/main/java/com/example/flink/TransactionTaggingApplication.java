@@ -60,12 +60,21 @@ public class TransactionTaggingApplication {
 
                 // Initialize rule engine based on rule source
                 log.info("[traceId={}] Initializing rule engine with source: {}", traceId, ruleSource);
-                if ("table".equalsIgnoreCase(ruleSource)) {
-                    ruleEngineService.reloadRulesFromTable();
-                } else {
+                try {
+                    if ("table".equalsIgnoreCase(ruleSource)) {
+                        ruleEngineService.reloadRulesFromTable();
+                    } else if ("decision-table".equalsIgnoreCase(ruleSource) || "decisiontable".equalsIgnoreCase(ruleSource)) {
+                        ruleEngineService.reloadRulesFromDecisionTable();
+                    } else {
+                        ruleEngineService.reloadRules();
+                    }
+                    log.info("[traceId={}] Rule engine initialized successfully", traceId);
+                } catch (Exception e) {
+                    log.warn("[traceId={}] Failed to load rules from source '{}': {}. Falling back to DRL rules.",
+                            traceId, ruleSource, e.getMessage());
                     ruleEngineService.reloadRules();
+                    log.info("[traceId={}] Rule engine initialized with fallback DRL rules", traceId);
                 }
-                log.info("[traceId={}] Rule engine initialized successfully", traceId);
 
                 // Generate sample data if requested
                 if (mode == ExecutionMode.GENERATE) {

@@ -1,0 +1,9 @@
+RuleSet,TransactionRules
+Import,com.example.flink.model.Transaction
+Import,java.math.BigDecimal
+RuleTable,High Amount Rules
+CONDITION,ACTION
+$tx:Transaction(,$tx.addTag(""
+,$tx.amount >,,
+10000,HIGH_AMOUNT
+50000,VERY_HIGH_AMOUNT

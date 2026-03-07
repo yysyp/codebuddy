@@ -1,0 +1,170 @@
+package rules
+
+import com.example.flink.model.Transaction
+import java.math.BigDecimal
+import java.util.List
+import java.util.ArrayList
+import org.slf4j.Logger
+
+global Logger log
+global String traceId
+
+// Rule 1: High Amount Transaction
+rule "High Amount Transaction"
+    salience 100
+    when
+        $tx : Transaction(amount != null, amount > 10000)
+    then
+        $tx.addTag("HIGH_AMOUNT");
+        log.debug("[traceId={}] Rule 'High Amount Transaction' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 2: Very High Amount Transaction
+rule "Very High Amount Transaction"
+    salience 110
+    when
+        $tx : Transaction(amount != null, amount > 50000)
+    then
+        $tx.addTag("VERY_HIGH_AMOUNT");
+        log.debug("[traceId={}] Rule 'Very High Amount Transaction' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 3: High Risk Transaction
+rule "High Risk Transaction"
+    salience 90
+    when
+        $tx : Transaction(riskScore != null, riskScore > 70)
+    then
+        $tx.addTag("HIGH_RISK");
+        log.debug("[traceId={}] Rule 'High Risk Transaction' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 4: Critical Risk Transaction
+rule "Critical Risk Transaction"
+    salience 120
+    when
+        $tx : Transaction(riskScore != null, riskScore > 90)
+    then
+        $tx.addTag("CRITICAL_RISK");
+        log.debug("[traceId={}] Rule 'Critical Risk Transaction' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 5: Very High Risk Transaction
+rule "Very High Risk Transaction"
+    salience 115
+    when
+        $tx : Transaction(riskScore != null, riskScore >= 80)
+    then
+        $tx.addTag("VERY_HIGH_RISK");
+        log.debug("[traceId={}] Rule 'Very High Risk Transaction' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 6: Transfer Transaction
+rule "Transfer Transaction"
+    salience 50
+    when
+        $tx : Transaction(transactionType != null, transactionType == "TRANSFER")
+    then
+        $tx.addTag("TRANSFER");
+        log.debug("[traceId={}] Rule 'Transfer Transaction' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 7: Payment Transaction
+rule "Payment Transaction"
+    salience 35
+    when
+        $tx : Transaction(transactionType != null, transactionType == "PAYMENT")
+    then
+        $tx.addTag("PAYMENT");
+        log.debug("[traceId={}] Rule 'Payment Transaction' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 8: Debit Transaction
+rule "Debit Transaction"
+    salience 35
+    when
+        $tx : Transaction(transactionType != null, transactionType == "DEBIT")
+    then
+        $tx.addTag("DEBIT");
+        log.debug("[traceId={}] Rule 'Debit Transaction' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 9: Credit Transaction
+rule "Credit Transaction"
+    salience 35
+    when
+        $tx : Transaction(transactionType != null, transactionType == "CREDIT")
+    then
+        $tx.addTag("CREDIT");
+        log.debug("[traceId={}] Rule 'Credit Transaction' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 10: Refund Transaction
+rule "Refund Transaction"
+    salience 35
+    when
+        $tx : Transaction(transactionType != null, transactionType == "REFUND")
+    then
+        $tx.addTag("REFUND");
+        log.debug("[traceId={}] Rule 'Refund Transaction' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 11: Missing Country
+rule "Missing Country Code"
+    salience 40
+    when
+        $tx : Transaction(countryCode == null || countryCode == "")
+    then
+        $tx.addTag("NO_COUNTRY");
+        log.debug("[traceId={}] Rule 'Missing Country Code' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 12: International Transaction
+rule "International Transaction"
+    salience 45
+    when
+        $tx : Transaction(countryCode != null, countryCode != "", countryCode != "US")
+    then
+        $tx.addTag("INTERNATIONAL");
+        log.debug("[traceId={}] Rule 'International Transaction' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 13: Low Amount Transaction
+rule "Low Amount Transaction"
+    salience 30
+    when
+        $tx : Transaction(amount != null, amount < 10)
+    then
+        $tx.addTag("LOW_AMOUNT");
+        log.debug("[traceId={}] Rule 'Low Amount Transaction' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 14: Suspicious Pattern
+rule "Suspicious Pattern"
+    salience 130
+    when
+        $tx : Transaction(
+            riskScore != null, 
+            riskScore > 60, 
+            amount != null, 
+            amount > 5000
+        )
+    then
+        $tx.addTag("SUSPICIOUS");
+        log.debug("[traceId={}] Rule 'Suspicious Pattern' fired for transaction: {}", traceId, $tx.getTransactionId());
+end
+
+// Rule 15: High Risk International
+rule "High Risk International"
+    salience 140
+    when
+        $tx : Transaction(
+            countryCode != null, 
+            countryCode != "US",
+            riskScore != null,
+            riskScore > 50
+        )
+    then
+        $tx.addTag("HIGH_RISK_INTERNATIONAL");
+        log.debug("[traceId={}] Rule 'High Risk International' fired for transaction: {}", traceId, $tx.getTransactionId());
+end

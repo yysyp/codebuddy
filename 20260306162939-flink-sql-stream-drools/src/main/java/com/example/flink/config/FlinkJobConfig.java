@@ -100,7 +100,7 @@ public class FlinkJobConfig {
     private Duration metricsInterval = Duration.ofSeconds(60);
 
     /**
-     * Rule source: drl (default) or table
+     * Rule source: drl (default), table, or decision-table
      */
     private String ruleSource = "drl";
 
@@ -108,6 +108,11 @@ public class FlinkJobConfig {
      * Table rules CSV file path
      */
     private String tableRulesPath = "rules/table-rules.csv";
+
+    /**
+     * Decision table CSV file path
+     */
+    private String decisionTablePath = "rules/decision-table.csv";
 
     @PostConstruct
     public void validate() {
