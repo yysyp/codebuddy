@@ -99,6 +99,16 @@ public class FlinkJobConfig {
      */
     private Duration metricsInterval = Duration.ofSeconds(60);
 
+    /**
+     * Rule source: drl (default) or table
+     */
+    private String ruleSource = "drl";
+
+    /**
+     * Table rules CSV file path
+     */
+    private String tableRulesPath = "rules/table-rules.csv";
+
     @PostConstruct
     public void validate() {
         log.info("FlinkJobConfig loaded: {}", this);

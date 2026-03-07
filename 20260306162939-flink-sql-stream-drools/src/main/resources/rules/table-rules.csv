@@ -1,0 +1,15 @@
+rule_name,field_name,operator,threshold_value,tag,priority,condition_type
+High Amount,amount,>,10000,HIGH_AMOUNT,100,simple
+Very High Amount,amount,>,50000,VERY_HIGH_AMOUNT,110,simple
+High Risk,riskScore,>,70,HIGH_RISK,90,simple
+Critical Risk,riskScore,>,90,CRITICAL_RISK,120,simple
+Very High Risk,riskScore,>=,80,VERY_HIGH_RISK,115,simple
+Transfer Transaction,transactionType,==,TRANSFER,TRANSFER,50,simple
+Payment Transaction,transactionType,==,PAYMENT,PAYMENT,35,simple
+Debit Transaction,transactionType,==,DEBIT,DEBIT,35,simple
+Credit Transaction,transactionType,==,CREDIT,CREDIT,35,simple
+Refund Transaction,transactionType,==,REFUND,REFUND,35,simple
+Missing Country,countryCode,isNull,,NO_COUNTRY,40,nullable
+Empty Country,countryCode,==,,NO_COUNTRY,40,empty
+International Transaction,countryCode,!=,US,INTERNATIONAL,45,simple
+Low Amount,amount,<,10,LOW_AMOUNT,30,simple

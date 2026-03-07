@@ -2,6 +2,7 @@ package com.example.flink;
 
 import com.example.flink.config.FlinkJobConfig;
 import com.example.flink.job.TransactionTaggingJob;
+import com.example.flink.service.RuleEngineService;
 import com.example.flink.util.CsvUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -37,7 +38,7 @@ public class TransactionTaggingApplication {
     }
 
     @Bean
-    public CommandLineRunner run(FlinkJobConfig config) {
+    public CommandLineRunner run(FlinkJobConfig config, RuleEngineService ruleEngineService) {
         return args -> {
             String traceId = java.util.UUID.randomUUID().toString();
             log.info("[traceId={}] Starting Flink Transaction Tagging Application", traceId);
@@ -47,13 +48,24 @@ public class TransactionTaggingApplication {
                 ExecutionMode mode = parseExecutionMode(args);
                 String inputPath = args.length > 1 ? args[1] : config.getInputPath();
                 String outputPath = args.length > 2 ? args[2] : config.getOutputPath();
+                String ruleSource = args.length > 3 ? args[3] : config.getRuleSource();
 
                 // Update config with command line arguments
                 config.setInputPath(inputPath);
                 config.setOutputPath(outputPath);
+                config.setRuleSource(ruleSource);
 
-                log.info("[traceId={}] Execution mode: {}, Input: {}, Output: {}", 
-                        traceId, mode, inputPath, outputPath);
+                log.info("[traceId={}] Execution mode: {}, Input: {}, Output: {}, Rule Source: {}",
+                        traceId, mode, inputPath, outputPath, ruleSource);
+
+                // Initialize rule engine based on rule source
+                log.info("[traceId={}] Initializing rule engine with source: {}", traceId, ruleSource);
+                if ("table".equalsIgnoreCase(ruleSource)) {
+                    ruleEngineService.reloadRulesFromTable();
+                } else {
+                    ruleEngineService.reloadRules();
+                }
+                log.info("[traceId={}] Rule engine initialized successfully", traceId);
 
                 // Generate sample data if requested
                 if (mode == ExecutionMode.GENERATE) {

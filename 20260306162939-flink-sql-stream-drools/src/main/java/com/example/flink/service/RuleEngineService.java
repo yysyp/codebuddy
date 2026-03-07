@@ -112,6 +112,51 @@ public class RuleEngineService {
     }
 
     /**
+     * Reload rules from table-structured CSV definition
+     */
+    public synchronized void reloadRulesFromTable() {
+        try {
+            log.info("Loading rules from table-structured definition...");
+
+            // Parse table rules
+            TableRuleParserService tableRuleParser = new TableRuleParserService();
+            String drlContent = tableRuleParser.parseRulesFromTable();
+
+            log.debug("Generated DRL content:\n{}", drlContent);
+
+            // Create KieBase from parsed DRL
+            KieServices kieServices = KieServices.Factory.get();
+            KieFileSystem kieFileSystem = kieServices.newKieFileSystem();
+
+            // Write the generated DRL content
+            kieFileSystem.write("src/main/resources/rules/table-generated.drl", drlContent);
+
+            KieBuilder kieBuilder = kieServices.newKieBuilder(kieFileSystem);
+            kieBuilder.buildAll();
+
+            if (kieBuilder.getResults().hasMessages(
+                    org.kie.api.builder.Message.Level.ERROR)) {
+                String errors = kieBuilder.getResults().getMessages().toString();
+                log.error("Rule compilation errors from table: {}", errors);
+                throw new RuntimeException("Rule compilation failed: " + errors);
+            }
+
+            KieModule kieModule = kieBuilder.getKieModule();
+            KieContainer newContainer = kieServices.newKieContainer(kieModule.getReleaseId());
+
+            KieContainer oldContainer = kieContainer.getAndSet(newContainer);
+            if (oldContainer != null) {
+                log.info("Old rule container replaced");
+            }
+
+            log.info("Rules loaded from table structure successfully");
+        } catch (Exception e) {
+            log.error("Failed to load rules from table: {}", e.getMessage(), e);
+            throw new RuntimeException("Table rule loading failed", e);
+        }
+    }
+
+    /**
      * Load rules resource from classpath or file system
      */
     private Resource loadRulesResource() throws IOException {
