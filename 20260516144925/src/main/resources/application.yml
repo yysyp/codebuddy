@@ -1,0 +1,64 @@
+# Command Wrapper Service Configuration
+# Note: The jasypt encryption password should be provided via command line argument:
+# --jasypt.encryptor.password=your-encryption-password
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: command-wrapper-service
+
+# Jasypt Encryption Configuration
+jasypt:
+  encryptor:
+    # Encryption password - MUST be provided via command line argument
+    password: ${JASYPT_PASSWORD:}
+    # Encryption algorithm - PBEWITHHMACSHA512ANDAES_256 for secure encryption
+    algorithm: PBEWITHHMACSHA512ANDAES_256
+
+# Command Wrapper Configuration
+command-wrapper:
+  # Placeholder configuration
+  placeholder:
+    prefix: "${"
+    suffix: "}"
+    separator: ":"
+  
+  # Encrypted passwords (use Jasypt to encrypt values)
+  # Format: type:key = encrypted_value
+  # Example: password:db = ENC(encrypted_value_here)
+  passwords:
+    # Database passwords
+    # password:db = ENC(your_encrypted_password)
+    
+    # API keys
+    # secret:api_key = ENC(your_encrypted_api_key)
+    
+    # SSH passwords
+    # password:ssh = ENC(your_encrypted_ssh_password)
+    
+    # Custom passwords - add your own here
+    # password:mypass = ENC(your_encrypted_password)
+  
+  # Default command execution timeout in seconds
+  default-timeout-seconds: 300
+  
+  # Maximum concurrent commands
+  max-concurrent-commands: 10
+  
+  # Default working directory
+  working-directory: ${user.dir}
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.cmdwrapper: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-}] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/command-wrapper.log
