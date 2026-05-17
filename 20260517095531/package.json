@@ -1,0 +1,281 @@
+{
+    "name": "developer-assistant-agent",
+    "displayName": "Developer Assistant Agent",
+    "description": "An intelligent development assistant based on Agent, Skills, and Hooks",
+    "version": "1.0.0",
+    "publisher": "developer",
+    "engines": {
+        "vscode": "^1.85.0",
+        "node": ">=18.0.0"
+    },
+    "categories": [
+        "Other",
+        "Programming Languages",
+        "Snippets",
+        "Linters",
+        "Formatters"
+    ],
+    "activationEvents": [
+        "onLanguage:typescript",
+        "onLanguage:javascript",
+        "onLanguage:typescriptreact",
+        "onLanguage:javascriptreact",
+        "onCommand:developerAssistant.start",
+        "onCommand:developerAssistant.configure",
+        "workspaceContains:**/*.ts",
+        "workspaceContains:**/*.js"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "developerAssistant.start",
+                "title": "Start Developer Assistant",
+                "category": "Developer Assistant",
+                "description": "Start the Developer Assistant Agent"
+            },
+            {
+                "command": "developerAssistant.configure",
+                "title": "Configure Developer Assistant",
+                "category": "Developer Assistant",
+                "description": "Configure Agent settings"
+            },
+            {
+                "command": "developerAssistant.analyze",
+                "title": "Analyze Current File",
+                "category": "Developer Assistant",
+                "description": "Analyze the currently opened file"
+            },
+            {
+                "command": "developerAssistant.refactor",
+                "title": "Refactor Selection",
+                "category": "Developer Assistant",
+                "description": "Refactor selected code"
+            },
+            {
+                "command": "developerAssistant.generateDoc",
+                "title": "Generate Documentation",
+                "category": "Developer Assistant",
+                "description": "Generate documentation for current file"
+            },
+            {
+                "command": "developerAssistant.generateTests",
+                "title": "Generate Tests",
+                "category": "Developer Assistant",
+                "description": "Generate unit tests"
+            },
+            {
+                "command": "developerAssistant.learn",
+                "title": "Learn from Interaction",
+                "category": "Developer Assistant",
+                "description": "Enable learning mode"
+            },
+            {
+                "command": "developerAssistant.skillList",
+                "title": "List Skills",
+                "category": "Developer Assistant",
+                "description": "List all available skills"
+            },
+            {
+                "command": "developerAssistant.hookList",
+                "title": "List Hooks",
+                "category": "Developer Assistant",
+                "description": "List all active hooks"
+            },
+            {
+                "command": "developerAssistant.optimize",
+                "title": "Optimize Skills",
+                "category": "Developer Assistant",
+                "description": "Optimize skill performance"
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Developer Assistant",
+            "properties": {
+                "developerAssistant.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable Developer Assistant"
+                },
+                "developerAssistant.model": {
+                    "type": "string",
+                    "default": "gpt-4",
+                    "description": "AI model to use"
+                },
+                "developerAssistant.maxTokens": {
+                    "type": "number",
+                    "default": 4000,
+                    "description": "Maximum tokens for responses"
+                },
+                "developerAssistant.temperature": {
+                    "type": "number",
+                    "default": 0.7,
+                    "description": "Response creativity (0-1)"
+                },
+                "developerAssistant.autoUpdate": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically update skills"
+                },
+                "developerAssistant.learningEnabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable learning from interactions"
+                },
+                "developerAssistant.filterSensitiveData": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Filter sensitive data before sending to AI"
+                },
+                "developerAssistant.allowedPatterns": {
+                    "type": "array",
+                    "default": ["*.ts", "*.js", "*.json", "*.tsx", "*.jsx"],
+                    "description": "File patterns to process"
+                },
+                "developerAssistant.blockedPatterns": {
+                    "type": "array",
+                    "default": ["*.env", "*.key", "*password*", "*secret*", "*.pem", "*.crt"],
+                    "description": "File patterns to exclude"
+                },
+                "developerAssistant.learningInterval": {
+                    "type": "number",
+                    "default": 60000,
+                    "description": "Learning interval in milliseconds"
+                },
+                "developerAssistant.maxKnowledgeEntries": {
+                    "type": "number",
+                    "default": 10000,
+                    "description": "Maximum knowledge base entries"
+                },
+                "developerAssistant.securityLevel": {
+                    "type": "string",
+                    "enum": ["high", "medium", "low"],
+                    "default": "high",
+                    "description": "Security level for data filtering"
+                }
+            }
+        },
+        "views": {
+            "explorer": [
+                {
+                    "id": "developerAssistant.view",
+                    "name": "Developer Assistant",
+                    "icon": "resources/icons/assistant.svg"
+                }
+            ]
+        },
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "developer-assistant-sidebar",
+                    "title": "Developer Assistant",
+                    "icon": "resources/icons/activity-bar.svg"
+                }
+            ]
+        },
+        "menus": {
+            "editor/context": [
+                {
+                    "command": "developerAssistant.analyze",
+                    "when": "editorHasSelection"
+                },
+                {
+                    "command": "developerAssistant.refactor",
+                    "when": "editorHasSelection"
+                },
+                {
+                    "command": "developerAssistant.generateDoc",
+                    "when": "editorTextFocus"
+                },
+                {
+                    "command": "developerAssistant.generateTests",
+                    "when": "editorTextFocus"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "developerAssistant.start",
+                    "when": "!developerAssistant.enabled"
+                }
+            ]
+        },
+        "languages": [
+            {
+                "id": "typescript",
+                "extensions": [".ts", ".tsx"],
+                "configuration": "./language-configuration.json"
+            },
+            {
+                "id": "javascript",
+                "extensions": [".js", ".jsx", ".mjs"],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "iconThemes": [
+            {
+                "id": "developer-assistant",
+                "label": "Developer Assistant",
+                "path": "./resources/icons/theme"
+            }
+        ],
+        "breakpoints": [
+            {
+                "language": "typescript"
+            },
+            {
+                "language": "javascript"
+            }
+        ],
+        "taskDefinitions": [
+            {
+                "type": "developer-assistant",
+                "required": ["task"],
+                "properties": {
+                    "task": {
+                        "type": "string",
+                        "description": "The task to execute"
+                    },
+                    "skill": {
+                        "type": "string",
+                        "description": "The skill to use"
+                    }
+                }
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "postinstall": "cd ../ && npm install",
+        "test": "npm run compile && node ./out/test/runTest.js",
+        "lint": "eslint src --ext ts",
+        "format": "prettier --write \"src/**/*.ts\"",
+        "build": "npm run compile",
+        "package": "vsce package",
+        "publish": "vsce publish"
+    },
+    "devDependencies": {
+        "@types/node": "^18.19.0",
+        "@types/vscode": "^1.85.0",
+        "@types/mocha": "^10.0.6",
+        "@types/sinon": "^17.0.3",
+        "@typescript-eslint/eslint-plugin": "^6.15.0",
+        "@typescript-eslint/parser": "^6.15.0",
+        "eslint": "^8.56.0",
+        "prettier": "^3.1.1",
+        "typescript": "^5.3.3",
+        "vsce": "^2.15.0",
+        "vscode-test": "^1.6.1",
+        "sinon": "^17.0.1",
+        "mocha": "^10.2.0"
+    },
+    "dependencies": {
+        "uuid": "^9.0.1",
+        "chalk": "^4.1.2",
+        "glob": "^10.3.10",
+        "minimatch": "^9.0.3",
+        "dotenv": "^16.3.1"
+    }
+}
